@@ -486,7 +486,13 @@ textarea.fi{resize:none;font-family:inherit;line-height:1.6}
         </div>
         <button class="bulk-toggle" id="bulk-tgl" onclick="toggleBulk()">☑ تحديد</button>
       </div>
-      <div class="section-h"><div class="section-t">المشتركون</div><div class="section-c" id="cnt-pill">0</div></div>
+      <div class="section-h">
+        <div class="section-t">المشتركون</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="section-c" id="cnt-pill" style="font-family:'JetBrains Mono',monospace">0 / 0</span>
+          <span style="font-size:10px;color:var(--tx3);font-weight:700" id="load-status"></span>
+        </div>
+      </div>
       <div class="list" id="list"></div>
     </div>
 
@@ -908,9 +914,16 @@ async function loadAll(){
   applyName();applyCfg();render();
 }
 async function loadSubs(){
-  const{data,error}=await sb.from('subscribers').select('*').order('name');
-  if(error){console.error(error);return toast('فشل التحميل','e');}
+  // Load all rows with explicit large range to bypass default 1000 limit
+  const{data,error,count}=await sb.from('subscribers').select('*',{count:'exact'}).order('name').range(0,9999);
+  if(error){
+    console.error('LOAD error:',error);
+    if($('load-status'))$('load-status').textContent='⚠ فشل';
+    return toast('فشل تحميل المشتركين: '+(error.message||error.code||''),'e');
+  }
   _subs=data||[];
+  if($('load-status'))$('load-status').textContent=`(الكل: ${count||_subs.length})`;
+  console.log(`Loaded ${_subs.length} subscribers (DB total: ${count})`);
 }
 async function loadCfg(){
   const{data}=await sb.from('app_settings').select('value').eq('key','settings').maybeSingle();
@@ -1016,9 +1029,14 @@ function renderList(){
   if(_filter==='attention')arr=arr.filter(s=>['unpaid','expired','expiring'].includes(status(s)));
   else if(_filter!=='all')arr=arr.filter(s=>status(s)===_filter);
   arr.sort((a,b)=>{const ord={unpaid:0,expired:1,expiring:2,active:3};const sa=status(a),sb_=status(b);if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];return dl(a)-dl(b);});
-  $('cnt-pill').textContent=arr.length;
+  // Show "displayed / total" so it's clear if filter is hiding any
+  $('cnt-pill').textContent=`${arr.length} / ${_subs.length}`;
   const list=$('list');
-  if(!arr.length){list.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>لا يوجد مشتركين</div></div>';return;}
+  if(!arr.length){
+    const msg=_subs.length===0?'لا يوجد مشتركين بعد — أضف من الزر (+)':_filter==='all'?'لا توجد نتائج للبحث':'لا يوجد مشتركين بهذا الفلتر';
+    list.innerHTML=`<div class="empty"><div class="empty-ico">${_subs.length===0?'➕':'🔍'}</div><div>${msg}</div>${_subs.length>0?'<div style="margin-top:8px;font-size:11px;color:var(--tx3)">إجمالي: '+_subs.length+'</div>':''}</div>`;
+    return;
+  }
   list.innerHTML=arr.map(s=>{
     const st=status(s),d=dl(s);
     const dlbl=d<0?`منتهي ${Math.abs(d)}ي`:d===0?'اليوم':`${d}ي`;
