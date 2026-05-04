@@ -1139,8 +1139,27 @@ async function saveSub(){
   if(!user)return toast('اسم المستخدم مطلوب','e');
   if(!price||price<1000)return toast('السعر غير صحيح','e');
   const s={name,username:user,phone:$('f-phone').value.trim()||null,password:$('f-pw').value.trim()||null,price,start_date:$('f-start').value,end_date:$('f-end').value,note:$('f-notes').value.trim()||null,is_paid:_payChoice==='paid',debt:_payChoice==='paid'?0:price,updated_at:new Date().toISOString()};
-  if(_curEdit){const{error}=await sb.from('subscribers').update(s).eq('id',_curEdit);if(error)return toast('فشل','e');toast('تم التعديل');}
-  else{const{error}=await sb.from('subscribers').insert(s);if(error){console.error(error);return toast('فشل (يوزر مكرر؟)','e');}toast('أُضيف');}
+  if(_curEdit){
+    const{data,error}=await sb.from('subscribers').update(s).eq('id',_curEdit).select();
+    if(error){console.error('UPDATE:',error);return toast(error.message||error.hint||'فشل التعديل','e');}
+    toast('تم التعديل ✓');
+  }else{
+    const{data,error}=await sb.from('subscribers').insert(s).select();
+    if(error){
+      console.error('INSERT:',error);
+      let m=error.message||error.hint||'فشل غير معروف';
+      if(error.code==='23505')m='اليوزر "'+user+'" موجود مسبقاً';
+      else if(error.code==='42501'||(error.message||'').toLowerCase().includes('row-level'))m='RLS مفعّل بدون policy للإدخال — صلّحها بـSupabase';
+      else if(error.code==='23502')m='حقل ناقص: '+(error.details||error.message);
+      return toast(m,'e');
+    }
+    if(!data||!data.length){return toast('لم يُضف — RLS بلوك الإدخال','e');}
+    toast('أُضيف ✓ ('+(data[0].name||'')+')');
+    // Reset filter and search so new subscriber is visible
+    _filter='all';
+    document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f==='all'));
+    if($('search'))$('search').value='';
+  }
   closeOv('ov-form');await loadSubs();render();
 }
 async function delSub(){
