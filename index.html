@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>Rand ATM</title>
+<meta name="application-name" content="Rand ATM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Rand ATM">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fafafa" id="theme-color">
+<meta name="description" content="نظام إدارة مشتركين الإنترنت">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+/* THEMES */
+:root{
+  --r:16px;--r-s:12px;--r-l:24px;
+}
+[data-theme="light"]{
+  --bg:#fafafa;--surface:#fff;--surface-2:#f5f5f7;
+  --tx:#0a0a0a;--tx2:#525252;--tx3:#a3a3a3;--tx4:#d4d4d4;
+  --br:#ebebeb;--shadow:rgba(0,0,0,.05);
+  --acc:#0070f3;--acc-bg:#e6f0ff;
+  --green:#10b981;--green-bg:#d1fae5;
+  --orange:#f59e0b;--orange-bg:#fef3c7;
+  --red:#ef4444;--red-bg:#fee2e2;
+  --indigo:#5856d6;--purple:#8b5cf6;
+}
+[data-theme="dark"]{
+  --bg:#0a0a0a;--surface:#1a1a1a;--surface-2:#262626;
+  --tx:#fafafa;--tx2:#a3a3a3;--tx3:#737373;--tx4:#404040;
+  --br:#262626;--shadow:rgba(0,0,0,.4);
+  --acc:#3b82f6;--acc-bg:#1e3a5f;
+  --green:#10b981;--green-bg:#064e3b;
+  --orange:#f59e0b;--orange-bg:#451a03;
+  --red:#ef4444;--red-bg:#450a0a;
+  --indigo:#6366f1;--purple:#a78bfa;
+}
+[data-theme="midnight"]{
+  --bg:#000;--surface:#0a0a14;--surface-2:#13132a;
+  --tx:#fafafa;--tx2:#a8a8c0;--tx3:#5e5e7a;--tx4:#2a2a40;
+  --br:#1a1a2e;--shadow:rgba(0,0,0,.6);
+  --acc:#7c5cff;--acc-bg:#2a1d5a;
+  --green:#10ffa3;--green-bg:#0a3528;
+  --orange:#ffb84d;--orange-bg:#3d2810;
+  --red:#ff5e7e;--red-bg:#3d1018;
+  --indigo:#6366f1;--purple:#a78bfa;
+}
+[data-theme="sand"]{
+  --bg:#faf6f0;--surface:#fff;--surface-2:#f5ede0;
+  --tx:#2a1f0a;--tx2:#8a7055;--tx3:#c0a880;--tx4:#e0d4b8;
+  --br:#e8dcc4;--shadow:rgba(180,130,40,.08);
+  --acc:#c87020;--acc-bg:#fff0e0;
+  --green:#608030;--green-bg:#e8f4d8;
+  --orange:#e08020;--orange-bg:#fff0d8;
+  --red:#cc3322;--red-bg:#ffe0d8;
+  --indigo:#7c5cff;--purple:#9168f8;
+}
+
+html{height:100%;background:var(--bg);overflow:hidden;position:fixed;width:100%;-webkit-text-size-adjust:100%;color-scheme:light}
+[data-theme="dark"] html,[data-theme="midnight"] html{color-scheme:dark}
+body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:'Tajawal',sans-serif;
+  background:var(--bg);color:var(--tx);
+  user-select:none;-webkit-user-select:none;
+  letter-spacing:-.005em;
+  transition:background .25s,color .25s;
+}
+input,button,select,textarea{font-family:inherit;font-size:16px;-webkit-appearance:none;outline:none;border:none;color:inherit;background:none}
+
+#app,#login{position:fixed;inset:0;display:flex;flex-direction:column}
+#login{align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+#app{display:none}
+
+/* LOGIN */
+.lcard{
+  width:100%;max-width:380px;
+  background:var(--surface);
+  border-radius:var(--r-l);padding:36px 28px 28px;
+  box-shadow:0 4px 24px var(--shadow);
+  border:1px solid var(--br);
+}
+.lhead{text-align:center;margin-bottom:24px}
+.llogo{
+  width:64px;height:64px;border-radius:20px;
+  background:var(--tx);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;color:var(--bg);
+}
+.ltitle{font-size:24px;font-weight:900;letter-spacing:-1px}
+.lsub{font-size:14px;color:var(--tx3);margin-top:5px;font-weight:500}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:22px 0 22px}
+.pdot{width:12px;height:12px;border-radius:50%;background:var(--tx4);transition:all .25s}
+.pdot.on{background:var(--tx);transform:scale(1.15)}
+.pdot.err{background:var(--red);animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;direction:ltr}
+.pkey{
+  height:58px;border-radius:18px;
+  background:var(--surface-2);
+  font-size:24px;font-weight:500;color:var(--tx);
+  cursor:pointer;transition:all .12s;
+  letter-spacing:0;font-family:'JetBrains Mono',monospace;
+}
+.pkey:active{background:var(--tx);color:var(--bg);transform:scale(.95)}
+.pkey.gh{font-size:13px;font-weight:700;color:var(--tx3);font-family:'Tajawal',sans-serif}
+.pkey.del{font-size:18px}
+.lerr{color:var(--red);font-size:13px;text-align:center;font-weight:700;height:18px;margin:6px 0}
+#bio-btn{width:100%;margin-top:14px;padding:13px;border-radius:14px;background:var(--surface-2);color:var(--tx);font-size:13px;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px}
+
+/* HEADER */
+.topbar{
+  background:var(--bg);
+  padding:max(14px,calc(12px + env(safe-area-inset-top))) 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.tb-l{display:flex;align-items:center;gap:11px}
+.tb-mark{
+  width:42px;height:42px;border-radius:13px;
+  background:var(--tx);display:flex;align-items:center;justify-content:center;
+  color:var(--bg);font-weight:900;font-size:17px;
+}
+.tb-name{font-size:18px;font-weight:900;letter-spacing:-.5px}
+.tb-date{font-size:11px;color:var(--tx3);font-weight:600;margin-top:1px}
+.iconb{
+  width:38px;height:38px;border-radius:11px;
+  background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--tx);
+  border:1px solid var(--br);transition:all .15s;
+}
+.iconb:active{background:var(--tx);color:var(--bg)}
+
+/* PAGES */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:120px}
+.page{display:none;animation:fadeIn .25s}
+.page.on{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* HOME */
+.greet{padding:0 20px 14px}
+.greet-t{font-size:14px;color:var(--tx3);font-weight:600;margin-bottom:3px}
+.greet-n{font-size:24px;font-weight:900;letter-spacing:-.7px}
+
+.kpi-row{padding:0 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--br);border-radius:var(--r);padding:14px}
+.kpi.dk{background:var(--tx);color:var(--bg);border:none}
+.kpi-l{font-size:11px;color:var(--tx3);font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.4px}
+.kpi.dk .kpi-l{color:rgba(255,255,255,.6)}
+[data-theme="light"] .kpi.dk .kpi-l,[data-theme="sand"] .kpi.dk .kpi-l{color:rgba(255,255,255,.6)}
+.kpi-v{font-size:22px;font-weight:900;letter-spacing:-.7px;font-family:'JetBrains Mono',monospace;line-height:1}
+.kpi-c{font-size:11px;color:var(--tx3);font-weight:600;margin-top:4px}
+.kpi.dk .kpi-c{color:rgba(255,255,255,.5)}
+.kpi.green .kpi-v{color:var(--green)}
+.kpi.red .kpi-v{color:var(--red)}
+
+.qstats{margin:0 16px 18px;background:var(--surface);border:1px solid var(--br);border-radius:var(--r);padding:6px;display:grid;grid-template-columns:repeat(4,1fr)}
+.qst{padding:10px 6px;text-align:center;cursor:pointer;border-radius:11px;transition:all .15s;position:relative}
+.qst:not(:last-child)::after{content:'';position:absolute;left:0;top:20%;bottom:20%;border-left:1px solid var(--br)}
+.qst:active{background:var(--surface-2)}
+.qst-v{font-size:20px;font-weight:900;letter-spacing:-.4px;font-family:'JetBrains Mono',monospace}
+.qst-l{font-size:10px;color:var(--tx3);font-weight:700;margin-top:3px}
+.qst.green .qst-v{color:var(--green)}
+.qst.amb .qst-v{color:var(--orange)}
+.qst.red .qst-v{color:var(--red)}
+
+.section-h{padding:0 20px 8px;display:flex;align-items:center;justify-content:space-between}
+.section-t{font-size:13px;font-weight:900;letter-spacing:-.2px;display:flex;align-items:center;gap:6px}
+.section-t .ico{font-size:14px}
+.section-c{font-size:12px;color:var(--tx3);font-weight:700;font-family:'JetBrains Mono',monospace}
+.section-link{font-size:12px;color:var(--acc);font-weight:700;cursor:pointer}
+
+.attn-list{padding:0 16px 16px}
+.attn-card{background:var(--surface);border:1px solid var(--br);border-radius:var(--r);overflow:hidden}
+.attn-empty{padding:30px 20px;text-align:center;color:var(--tx3);font-size:13px}
+.attn-row{padding:12px 14px;display:flex;align-items:center;gap:11px;cursor:pointer;position:relative;transition:all .12s}
+.attn-row:not(:last-child)::after{content:'';position:absolute;right:14px;left:14px;bottom:0;border-bottom:1px solid var(--br)}
+.attn-row:active{background:var(--surface-2)}
+.attn-ind{width:8px;height:8px;border-radius:50%;background:var(--orange);flex-shrink:0;box-shadow:0 0 0 3px var(--orange-bg)}
+.attn-row.expired .attn-ind{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+.attn-row.unpaid .attn-ind{background:var(--red);box-shadow:0 0 0 3px var(--red-bg)}
+.attn-info{flex:1;min-width:0}
+.attn-name{font-size:13px;font-weight:900;letter-spacing:-.2px}
+.attn-reason{font-size:11px;color:var(--tx3);font-weight:600;margin-top:1px}
+.attn-row.expired .attn-reason,.attn-row.unpaid .attn-reason{color:var(--red)}
+.attn-row.expiring .attn-reason{color:var(--orange)}
+.attn-act{padding:5px 10px;border-radius:8px;font-size:10px;font-weight:900;background:var(--acc-bg);color:var(--acc);flex-shrink:0}
+
+.pkg-stats{padding:0 16px 24px}
+.pkg-srow{background:var(--surface);border:1px solid var(--br);border-radius:var(--r);overflow:hidden}
+.pkg-item{padding:11px 14px;display:flex;align-items:center;gap:11px;position:relative}
+.pkg-item:not(:last-child)::after{content:'';position:absolute;right:14px;left:14px;bottom:0;border-bottom:1px solid var(--br)}
+.pkg-amt{font-size:13px;font-weight:900;font-family:'JetBrains Mono',monospace;flex:0 0 auto;width:80px}
+.pkg-bar{flex:1;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.pkg-bar-f{height:100%;background:var(--tx);border-radius:3px}
+.pkg-cnt{font-size:11px;color:var(--tx3);font-weight:700;font-family:'JetBrains Mono',monospace;flex:0 0 auto;width:60px;text-align:left}
+
+/* LIST */
+.search-wrap{padding:8px 16px 14px}
+.search-box{background:var(--surface);border:1px solid var(--br);border-radius:var(--r-s);padding:11px 14px;display:flex;align-items:center;gap:10px}
+.search-box input{flex:1;font-size:14px;color:var(--tx)}
+.search-box input::placeholder{color:var(--tx3)}
+
+.list-controls{padding:0 16px 14px;display:flex;align-items:center;gap:8px}
+.chips{flex:1;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:7px 14px;border-radius:50px;background:var(--surface);border:1px solid var(--br);font-size:12px;font-weight:700;color:var(--tx2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.chip.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.bulk-toggle{flex:0 0 auto;padding:7px 12px;border-radius:50px;background:var(--surface);border:1px solid var(--br);font-size:11px;font-weight:900;color:var(--tx2);cursor:pointer;white-space:nowrap}
+.bulk-toggle.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+
+.list{padding:0 16px}
+.scard{background:var(--surface);border:1px solid var(--br);border-radius:var(--r-s);padding:13px 14px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:all .12s}
+.scard:active{background:var(--surface-2)}
+.scard.selected{border-color:var(--acc);background:var(--acc-bg)}
+.scard.selected .s-av{background:var(--acc);color:#fff}
+.s-check{
+  width:22px;height:22px;border-radius:6px;border:2px solid var(--tx4);
+  flex-shrink:0;display:none;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;
+}
+.bulk-mode .s-check{display:flex}
+.scard.selected .s-check{background:var(--acc);border-color:var(--acc)}
+.s-av{width:40px;height:40px;border-radius:13px;background:var(--tx);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;flex-shrink:0}
+.scard.expiring .s-av{background:var(--orange);color:#fff}
+.scard.expired .s-av{background:var(--red);color:#fff}
+.scard.unpaid .s-av{background:var(--red);color:#fff}
+.s-info{flex:1;min-width:0}
+.s-name{font-size:14px;font-weight:900;letter-spacing:-.2px}
+.s-sub{font-size:11px;color:var(--tx3);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.s-r{text-align:left;flex-shrink:0}
+.s-price{font-size:13px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.s-days{font-size:10px;color:var(--tx3);font-weight:700;margin-top:1px}
+.scard.active .s-days{color:var(--green)}
+.scard.expiring .s-days{color:var(--orange)}
+.scard.expired .s-days,.scard.unpaid .s-days{color:var(--red)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--tx3)}
+.empty-ico{font-size:48px;margin-bottom:12px;opacity:.5}
+
+.bulk-bar{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:max(80px,calc(70px + env(safe-area-inset-bottom)));
+  width:calc(100% - 24px);max-width:430px;
+  background:var(--tx);color:var(--bg);
+  border-radius:18px;padding:11px 16px;
+  display:none;align-items:center;justify-content:space-between;gap:8px;
+  z-index:9;box-shadow:0 8px 24px var(--shadow);
+}
+.bulk-bar.show{display:flex}
+.bulk-bar-cnt{font-size:13px;font-weight:900}
+.bulk-bar-acts{display:flex;gap:6px}
+.bba{padding:7px 12px;border-radius:10px;background:rgba(255,255,255,.15);color:var(--bg);font-size:11px;font-weight:900;cursor:pointer}
+[data-theme="light"] .bba,[data-theme="sand"] .bba{color:#fff}
+.bba.bp{background:var(--acc);color:#fff}
+.bba.wa{background:#25d366;color:#fff}
+
+/* MORE PAGE */
+.more-section{padding:8px 16px 18px}
+.more-section-t{font-size:11px;color:var(--tx3);font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:0 4px 8px}
+.more-grp{background:var(--surface);border:1px solid var(--br);border-radius:var(--r);overflow:hidden}
+.more-row{padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;transition:all .12s}
+.more-row:not(:last-child)::after{content:'';position:absolute;right:14px;left:14px;bottom:0;border-bottom:1px solid var(--br)}
+.more-row:active{background:var(--surface-2)}
+.more-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;flex-shrink:0}
+.more-info{flex:1;min-width:0}
+.more-t{font-size:14px;font-weight:700}
+.more-d{font-size:11px;color:var(--tx3);font-weight:600;margin-top:1px}
+.more-v{font-size:13px;color:var(--tx3);font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0;direction:ltr}
+.more-row input.fi{background:transparent;padding:0;flex:1;text-align:left;direction:ltr;font-size:14px;color:var(--tx2);font-weight:600;border:none;width:100%}
+.more-row select.fi{background:transparent;border:none;text-align:left;direction:ltr;flex:0 0 auto;font-size:13px;color:var(--acc);font-weight:700;padding:0}
+.more-arrow{font-size:18px;color:var(--tx3);font-weight:300}
+.more-toggle{width:40px;height:24px;border-radius:12px;background:var(--tx4);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.more-toggle.on{background:var(--green)}
+.more-toggle::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:2px;right:2px;transition:transform .2s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.more-toggle.on::after{transform:translateX(-16px)}
+
+/* BOTTOM NAV */
+.bnav{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:max(14px,calc(8px + env(safe-area-inset-bottom)));
+  width:calc(100% - 24px);max-width:430px;
+  background:var(--surface);border:1px solid var(--br);
+  border-radius:32px;padding:7px;
+  display:flex;align-items:center;gap:5px;
+  z-index:10;box-shadow:0 12px 30px var(--shadow);
+}
+.bnav-item{flex:1;height:48px;border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--tx3);cursor:pointer;transition:all .2s}
+.bnav-item.on{background:var(--tx);color:var(--bg)}
+.bnav-item svg{width:18px;height:18px}
+.bnav-item span{font-size:9px;font-weight:800}
+.bnav-add{flex:0 0 auto;width:54px;height:54px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-12px 4px 0;box-shadow:0 8px 22px rgba(0,112,243,.35);transition:transform .15s}
+.bnav-add:active{transform:scale(.92) rotate(45deg)}
+
+/* SHEETS */
+.ov{position:fixed;inset:0;z-index:100;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.4)}
+.ov.show{display:flex;animation:ovIn .25s ease}
+.ov.ctr{align-items:center;padding:20px}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.sheet{width:100%;max-width:480px;max-height:92vh;background:var(--bg);border-radius:var(--r-l) var(--r-l) 0 0;display:flex;flex-direction:column;animation:shIn .35s cubic-bezier(.32,.72,0,1);padding-bottom:env(safe-area-inset-bottom)}
+.ov.ctr .sheet{border-radius:var(--r-l);max-width:380px;animation:scIn .35s cubic-bezier(.32,.72,0,1)}
+@keyframes shIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.sh-handle{padding:11px 0 4px;display:flex;justify-content:center;flex-shrink:0}
+.sh-bar{width:36px;height:4px;border-radius:2px;background:var(--tx4)}
+.sh-title{padding:8px 22px 14px;font-size:20px;font-weight:900;letter-spacing:-.5px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.sh-close{width:32px;height:32px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx2);font-size:14px}
+.sh-body{flex:1;overflow-y:auto;padding:0 22px 16px}
+.sh-foot{padding:14px 22px max(20px,env(safe-area-inset-bottom));display:flex;gap:10px;flex-shrink:0;border-top:1px solid var(--br)}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;color:var(--tx3);font-weight:700;margin-bottom:7px;padding-right:4px;text-transform:uppercase;letter-spacing:.4px}
+.fi{width:100%;background:var(--surface);border:1px solid var(--br);border-radius:12px;padding:13px 14px;color:var(--tx);font-size:14px}
+.fi:focus{border-color:var(--tx)}
+.fi::placeholder{color:var(--tx3)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.fi{resize:none;font-family:inherit;line-height:1.6}
+
+.btn{flex:1;padding:13px 16px;border-radius:14px;font-size:14px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn.bp{background:var(--tx);color:var(--bg)}
+.btn.bg{background:var(--surface);color:var(--tx);border:1px solid var(--br)}
+.btn.bd{background:var(--red-bg);color:var(--red);flex:0 0 auto;padding:13px 16px}
+.btn.bs{background:var(--acc);color:#fff;box-shadow:0 6px 18px rgba(0,112,243,.3)}
+.btn.bg-success{background:var(--green-bg);color:var(--green)}
+
+.pkg-sel{display:flex;flex-wrap:wrap;gap:6px;max-height:130px;overflow-y:auto}
+.pkg{padding:7px 12px;border-radius:50px;background:var(--surface);border:1px solid var(--br);font-size:12px;font-weight:700;color:var(--tx2);font-family:'JetBrains Mono',monospace;cursor:pointer}
+.pkg.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+
+.ptog{display:flex;background:var(--surface);border:1px solid var(--br);border-radius:14px;padding:3px}
+.pt{flex:1;padding:11px;border-radius:11px;font-size:13px;font-weight:900;cursor:pointer;color:var(--tx3)}
+.pt.paid.on{background:var(--green);color:#fff}
+.pt.unpaid.on{background:var(--red);color:#fff}
+
+/* TOAST */
+.toasts{position:fixed;top:max(20px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:380px}
+.toast{background:var(--tx);color:var(--bg);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;box-shadow:0 12px 30px rgba(0,0,0,.2);animation:toastIn .3s}
+.toast.s{background:var(--green);color:#fff}
+.toast.e{background:var(--red);color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+
+/* PROFILE */
+.prof-h{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:8px 0}
+.prof-av{width:64px;height:64px;border-radius:20px;background:var(--tx);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex-shrink:0}
+.prof-info{flex:1;min-width:0}
+.prof-name{font-size:20px;font-weight:900;letter-spacing:-.5px}
+.prof-user{font-size:12px;color:var(--tx3);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.prof-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--br);gap:12px}
+.prof-row:last-child{border:none}
+.prof-k{font-size:13px;color:var(--tx3);font-weight:600}
+.prof-v{font-size:13px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.prof-v.g{color:var(--green)}
+.prof-v.a{color:var(--orange)}
+.prof-v.r{color:var(--red)}
+
+.acts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.act{aspect-ratio:1;border-radius:16px;background:var(--surface);border:1px solid var(--br);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--tx);font-size:10px;font-weight:700;transition:all .12s}
+.act svg{width:18px;height:18px}
+.act:active{background:var(--tx);color:var(--bg)}
+.act.wa{background:#dcfce7;border-color:#bbf7d0;color:#166534}
+[data-theme="dark"] .act.wa,[data-theme="midnight"] .act.wa{background:#0a3d1a;border-color:#1f5d2e;color:#10b981}
+.act.r{background:var(--red-bg);color:var(--red)}
+.act.b{background:var(--acc-bg);color:var(--acc)}
+
+/* THEMES PICKER */
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.thm-card{height:90px;border-radius:14px;cursor:pointer;display:flex;align-items:flex-end;padding:12px;font-size:12px;font-weight:900;color:#fff;border:2px solid transparent;transition:all .15s;text-shadow:0 1px 4px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.thm-card.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-bg)}
+.thm-card .check{position:absolute;top:8px;left:8px;width:22px;height:22px;border-radius:50%;background:#fff;color:#0a0a0a;display:none;align-items:center;justify-content:center;font-size:13px;font-weight:900}
+.thm-card.on .check{display:flex}
+.thm-light{background:linear-gradient(135deg,#fff,#f5f5f7);color:#0a0a0a;text-shadow:none;border-color:var(--br)}
+.thm-dark{background:linear-gradient(135deg,#1a1a1a,#0a0a0a)}
+.thm-midnight{background:linear-gradient(135deg,#1e0a4c,#5b2dc4)}
+.thm-sand{background:linear-gradient(135deg,#faf6f0,#c87020);color:#2a1f0a;text-shadow:none}
+
+/* CHARTS */
+.chart-card{background:var(--surface);border:1px solid var(--br);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.chart-title{font-size:13px;font-weight:900;color:var(--tx2);margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.chart-canvas{position:relative;width:100%}
+
+/* RECEIPT colors */
+.rc-row{display:flex;flex-wrap:wrap;gap:8px}
+.rc-chip{width:36px;height:36px;border-radius:11px;cursor:pointer;border:3px solid transparent}
+.rc-chip.on{border-color:var(--tx)}
+.rs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rs-card{background:var(--surface);border:2px solid var(--br);border-radius:12px;padding:12px;text-align:center;cursor:pointer}
+.rs-card.on{border-color:var(--acc);background:var(--acc-bg)}
+.rs-card-t{font-size:12px;font-weight:900;color:var(--tx)}
+.rs-card-d{font-size:10px;color:var(--tx3);margin-top:3px}
+
+/* MSG TAGS */
+.msg-tag{padding:5px 10px;border-radius:50px;background:var(--surface-2);font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;font-family:'JetBrains Mono',monospace;border:none}
+.msg-tag:active{background:var(--tx);color:var(--bg)}
+
+/* INFO BOX */
+.info-box{background:var(--acc-bg);border:1px solid var(--acc);border-radius:12px;padding:11px 13px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:10px}
+.info-box b{color:var(--tx)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lcard">
+    <div class="lhead">
+      <div class="llogo">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div class="ltitle" id="login-title">Rand ATM</div>
+      <div class="lsub">أدخل رمز PIN</div>
+    </div>
+    <div class="pin-dots">
+      <div class="pdot" id="pd0"></div>
+      <div class="pdot" id="pd1"></div>
+      <div class="pdot" id="pd2"></div>
+      <div class="pdot" id="pd3"></div>
+    </div>
+    <div class="lerr" id="lerr"></div>
+    <div class="pin-grid">
+      <button class="pkey" onclick="pin(1)">1</button>
+      <button class="pkey" onclick="pin(2)">2</button>
+      <button class="pkey" onclick="pin(3)">3</button>
+      <button class="pkey" onclick="pin(4)">4</button>
+      <button class="pkey" onclick="pin(5)">5</button>
+      <button class="pkey" onclick="pin(6)">6</button>
+      <button class="pkey" onclick="pin(7)">7</button>
+      <button class="pkey" onclick="pin(8)">8</button>
+      <button class="pkey" onclick="pin(9)">9</button>
+      <button class="pkey gh" onclick="pinClear()">CLR</button>
+      <button class="pkey" onclick="pin(0)">0</button>
+      <button class="pkey del" onclick="pinDel()">⌫</button>
+    </div>
+    <button id="bio-btn" onclick="tryBio()">🔐 Face ID / Touch ID</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-mark">R</div>
+      <div>
+        <div class="tb-name" id="biz-name">Rand ATM</div>
+        <div class="tb-date" id="hdate"></div>
+      </div>
+    </div>
+    <button class="iconb" onclick="loadAll()" aria-label="تحديث">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+  </div>
+
+  <div class="body" id="body">
+
+    <!-- HOME -->
+    <div class="page on" id="p-home">
+      <div class="greet">
+        <div class="greet-t" id="greet-t">مرحباً</div>
+        <div class="greet-n">إدارة الاشتراكات</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi green" onclick="openCharts()">
+          <div class="kpi-l">📈 الدخل الشهري</div>
+          <div class="kpi-v" id="kpi-inc">0</div>
+          <div class="kpi-c">دينار عراقي</div>
+        </div>
+        <div class="kpi dk" onclick="goList('unpaid')">
+          <div class="kpi-l">💸 ديون</div>
+          <div class="kpi-v" id="kpi-debt">0</div>
+          <div class="kpi-c" id="kpi-debt-cnt">0 مشترك</div>
+        </div>
+      </div>
+      <div class="qstats">
+        <div class="qst" onclick="goList('all')"><div class="qst-v" id="qst-tot">0</div><div class="qst-l">إجمالي</div></div>
+        <div class="qst green" onclick="goList('active')"><div class="qst-v" id="qst-act">0</div><div class="qst-l">نشط</div></div>
+        <div class="qst amb" onclick="goList('expiring')"><div class="qst-v" id="qst-exp">0</div><div class="qst-l">قارب</div></div>
+        <div class="qst red" onclick="goList('expired')"><div class="qst-v" id="qst-ded">0</div><div class="qst-l">منتهي</div></div>
+      </div>
+
+      <div class="section-h">
+        <div class="section-t"><span class="ico">⚠️</span> يحتاج متابعة</div>
+        <div class="section-link" onclick="goList('attention')" id="attn-cnt">عرض الكل ›</div>
+      </div>
+      <div class="attn-list">
+        <div class="attn-card" id="attn-list"></div>
+      </div>
+
+      <div class="section-h">
+        <div class="section-t"><span class="ico">📊</span> الباقات الأكثر</div>
+        <div class="section-link" onclick="openCharts()">رسوم بيانية ›</div>
+      </div>
+      <div class="pkg-stats">
+        <div class="pkg-srow" id="pkg-stats"></div>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="page" id="p-list">
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="opacity:.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="search" placeholder="ابحث بالاسم أو اليوزر..." oninput="renderList()">
+        </div>
+      </div>
+      <div class="list-controls">
+        <div class="chips" id="chips">
+          <div class="chip on" data-f="all" onclick="setF(this)">الكل</div>
+          <div class="chip" data-f="attention" onclick="setF(this)">⚠ متابعة</div>
+          <div class="chip" data-f="active" onclick="setF(this)">✓ نشط</div>
+          <div class="chip" data-f="expiring" onclick="setF(this)">⚡ قارب</div>
+          <div class="chip" data-f="expired" onclick="setF(this)">✕ منتهي</div>
+          <div class="chip" data-f="unpaid" onclick="setF(this)">💸 دين</div>
+        </div>
+        <button class="bulk-toggle" id="bulk-tgl" onclick="toggleBulk()">☑ تحديد</button>
+      </div>
+      <div class="section-h"><div class="section-t">المشتركون</div><div class="section-c" id="cnt-pill">0</div></div>
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- MORE -->
+    <div class="page" id="p-more">
+      <!-- Reports -->
+      <div class="more-section">
+        <div class="more-section-t">📈 التقارير والإحصائيات</div>
+        <div class="more-grp">
+          <div class="more-row"><div class="more-ico" style="background:var(--green)">📈</div><div class="more-info"><div class="more-t">الدخل الشهري</div><div class="more-d">المسدّد فقط</div></div><div class="more-v" id="rep-inc">0 IQD</div></div>
+          <div class="more-row"><div class="more-ico" style="background:var(--red)">💸</div><div class="more-info"><div class="more-t">إجمالي الديون</div><div class="more-d" id="rep-debt-cnt">0 مشترك</div></div><div class="more-v" id="rep-debt">0 IQD</div></div>
+          <div class="more-row" onclick="openCharts()"><div class="more-ico" style="background:var(--acc)">📊</div><div class="more-info"><div class="more-t">رسوم بيانية</div><div class="more-d">دخل شهري + توزيع الباقات</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Settings: Basic -->
+      <div class="more-section">
+        <div class="more-section-t">⚙ الإعدادات الأساسية</div>
+        <div class="more-grp">
+          <div class="more-row"><div class="more-ico" style="background:var(--tx)">A</div><div class="more-info"><div class="more-t">اسم التطبيق</div></div><input class="fi" id="set-biz" oninput="setting('bizName',this.value);applyName()"></div>
+          <div class="more-row"><div class="more-ico" style="background:#16a34a">📞</div><div class="more-info"><div class="more-t">رقم الهاتف</div></div><input class="fi" id="set-phone" type="tel" placeholder="07xxxxxxxx" onchange="setting('adminPhone',this.value)"></div>
+          <div class="more-row"><div class="more-ico" style="background:var(--orange)">⏰</div><div class="more-info"><div class="more-t">تنبيه قبل الانتهاء</div></div><select class="fi" id="set-alert" onchange="setting('alertDays',+this.value);_alertDays=+this.value;render()"><option value="3">3 أيام</option><option value="5" selected>5 أيام</option><option value="7">7 أيام</option><option value="10">10 أيام</option></select></div>
+          <div class="more-row" onclick="openTheme()"><div class="more-ico" style="background:var(--purple)">🎨</div><div class="more-info"><div class="more-t">المظهر</div><div class="more-d" id="theme-d">فاتح</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="more-section">
+        <div class="more-section-t">🔐 الأمان</div>
+        <div class="more-grp">
+          <div class="more-row" onclick="changePIN()"><div class="more-ico" style="background:#7c3aed">🔑</div><div class="more-info"><div class="more-t">رمز PIN</div><div class="more-d">حالياً 4 أرقام</div></div><div class="more-arrow">‹</div></div>
+          <div class="more-row" id="bio-set-row" onclick="registerBio()"><div class="more-ico" style="background:var(--indigo)">🔒</div><div class="more-info"><div class="more-t">Face ID / Touch ID</div><div class="more-d" id="bio-status">غير مفعّل</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Packages -->
+      <div class="more-section">
+        <div class="more-section-t">📦 الباقات الجاهزة</div>
+        <div class="more-grp" style="padding:14px">
+          <div id="set-pkgs" class="pkg-sel" style="margin-bottom:10px"></div>
+          <div style="display:flex;gap:8px"><input class="fi" id="new-pkg" type="number" placeholder="أضف سعر باقة" style="flex:1"><button class="btn bp" style="padding:10px 16px;flex:0 0 auto" onclick="addPkg()">+ إضافة</button></div>
+        </div>
+      </div>
+
+      <!-- Customization -->
+      <div class="more-section">
+        <div class="more-section-t">✨ التخصيص</div>
+        <div class="more-grp">
+          <div class="more-row" onclick="openMessages()"><div class="more-ico" style="background:#0891b2">💬</div><div class="more-info"><div class="more-t">رسائل واتساب</div><div class="more-d">قوالب التذكير والتأكيد</div></div><div class="more-arrow">‹</div></div>
+          <div class="more-row" onclick="openReceipt()"><div class="more-ico" style="background:#db2777">🧾</div><div class="more-info"><div class="more-t">الفاتورة</div><div class="more-d">لون وشكل وتذييل</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Backup -->
+      <div class="more-section">
+        <div class="more-section-t">💾 النسخ الاحتياطي والتصدير</div>
+        <div class="more-grp">
+          <div class="more-row" onclick="exportJSON()"><div class="more-ico" style="background:#6366f1">📥</div><div class="more-info"><div class="more-t">تصدير JSON</div><div class="more-d">ملف نسخة احتياطية كامل</div></div><div class="more-arrow">›</div></div>
+          <div class="more-row" onclick="document.getElementById('imp-file').click()"><div class="more-ico" style="background:#0ea5e9">📤</div><div class="more-info"><div class="more-t">استيراد JSON</div><div class="more-d">من نسخة سابقة</div></div><div class="more-arrow">›</div><input type="file" id="imp-file" accept=".json" onchange="importJSON(this)" style="display:none"></div>
+          <div class="more-row" onclick="exportExcel()"><div class="more-ico" style="background:#10b981">📊</div><div class="more-info"><div class="more-t">تصدير Excel</div><div class="more-d">قائمة المشتركين</div></div><div class="more-arrow">›</div></div>
+          <div class="more-row" onclick="exportPDF()"><div class="more-ico" style="background:var(--red)">🖨</div><div class="more-info"><div class="more-t">تقرير PDF</div><div class="more-d">للطباعة</div></div><div class="more-arrow">›</div></div>
+          <div class="more-row" onclick="openTelegram()"><div class="more-ico" style="background:#0088cc">📱</div><div class="more-info"><div class="more-t">نسخ احتياطي تلغرام</div><div class="more-d" id="tg-status">غير مفعّل</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="more-section">
+        <div class="more-section-t">🔔 الإشعارات</div>
+        <div class="more-grp">
+          <div class="more-row" onclick="openNotif()"><div class="more-ico" style="background:#f59e0b">🔔</div><div class="more-info"><div class="more-t">إعدادات الإشعارات</div><div class="more-d" id="push-status">غير مفعّل</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <!-- Tools -->
+      <div class="more-section">
+        <div class="more-section-t">🛠 أدوات وروابط</div>
+        <div class="more-grp">
+          <a href="app/index.html" class="more-row" style="text-decoration:none;color:inherit"><div class="more-ico" style="background:#5856d6">⮞</div><div class="more-info"><div class="more-t">التطبيق الأصلي</div><div class="more-d">النسخة القديمة (مرجعية)</div></div><div class="more-arrow">‹</div></a>
+          <a href="chooser.html" class="more-row" style="text-decoration:none;color:inherit"><div class="more-ico" style="background:#0891b2">🎨</div><div class="more-info"><div class="more-t">معاينة التصاميم</div><div class="more-d">5 ستايلات بصرية</div></div><div class="more-arrow">‹</div></a>
+          <div class="more-row" onclick="logout()"><div class="more-ico" style="background:var(--red)">🚪</div><div class="more-info"><div class="more-t" style="color:var(--red)">تسجيل خروج</div></div><div class="more-arrow">‹</div></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:14px 0 30px;color:var(--tx3);font-size:11px;font-weight:600">Rand ATM · v2 Clean Hierarchy</div>
+    </div>
+  </div>
+
+  <div class="bnav">
+    <div class="bnav-item on" data-page="home" onclick="goPage('home',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>الرئيسية</span></div>
+    <div class="bnav-item" data-page="list" onclick="goPage('list',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>المشتركون</span></div>
+    <div class="bnav-add" onclick="openAdd()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+    <div class="bnav-item" data-page="more" onclick="goPage('more',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>المزيد</span></div>
+  </div>
+
+  <!-- Bulk action bar -->
+  <div class="bulk-bar" id="bulk-bar">
+    <div><div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:700">تم تحديد</div><div class="bulk-bar-cnt" id="bulk-cnt">0 مشترك</div></div>
+    <div class="bulk-bar-acts">
+      <button class="bba" onclick="cancelBulk()">إلغاء</button>
+      <button class="bba wa" onclick="bulkWA()">📱 واتساب</button>
+      <button class="bba bp" onclick="openBulkRenew()">⚡ تجديد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT -->
+<div class="ov" id="ov-form">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span id="form-title">مشترك جديد</span><div class="sh-close" onclick="closeOv('ov-form')">✕</div></div>
+    <div class="sh-body">
+      <div class="f2">
+        <div class="fg"><label class="fl">الاسم *</label><input class="fi" id="f-name" placeholder="أحمد محمد"></div>
+        <div class="fg"><label class="fl">الهاتف</label><input class="fi" id="f-phone" type="tel" placeholder="07xxxxxxxx" style="direction:ltr;text-align:left"></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label class="fl">المستخدم *</label><input class="fi" id="f-user" placeholder="ahmed_99" style="direction:ltr;text-align:left"></div>
+        <div class="fg"><label class="fl">السعر *</label><input class="fi" id="f-price" type="number" placeholder="35000"></div>
+      </div>
+      <div class="fg"><label class="fl">المرور</label><input class="fi" id="f-pw" placeholder="اختياري" style="direction:ltr;text-align:left"></div>
+      <div class="fg"><label class="fl">باقات جاهزة</label><div class="pkg-sel" id="pkg-row"></div></div>
+      <div class="f2">
+        <div class="fg"><label class="fl">البداية *</label><input class="fi" id="f-start" type="date"></div>
+        <div class="fg"><label class="fl">النهاية</label><input class="fi" id="f-end" type="date" readonly style="opacity:.6"></div>
+      </div>
+      <div class="fg"><label class="fl">ملاحظات</label><input class="fi" id="f-notes" placeholder="اختياري"></div>
+      <div class="fg"><label class="fl">حالة الدفع</label><div class="ptog"><button class="pt paid on" id="pt-p" onclick="setPay('paid')">✓ مسدد</button><button class="pt unpaid" id="pt-u" onclick="setPay('unpaid')">✕ غير مسدد</button></div></div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-form')">إلغاء</button>
+      <button class="btn bd" id="del-btn" onclick="delSub()" style="display:none">🗑</button>
+      <button class="btn bp" onclick="saveSub()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="ov" id="ov-profile">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-body" style="padding-top:14px">
+      <div class="prof-h"><div class="prof-av" id="prof-av">؟</div><div class="prof-info"><div class="prof-name" id="prof-name">—</div><div class="prof-user" id="prof-user">—</div></div></div>
+      <div class="acts-row">
+        <div class="act wa" onclick="profWA()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.571l5.88-1.539A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg><span>واتساب</span></div>
+        <div class="act b" onclick="profRenew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span>تجديد</span></div>
+        <div class="act" onclick="profEdit()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>تعديل</span></div>
+        <div class="act r" onclick="profDel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>حذف</span></div>
+      </div>
+      <div id="prof-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RENEW -->
+<div class="ov ctr" id="ov-renew">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title" style="text-align:center;display:block">تجديد الاشتراك</div>
+    <div class="sh-body" style="padding-top:0" id="renew-body"></div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-renew')">إلغاء</button>
+      <button class="btn bs" onclick="doRenew()">✓ تجديد</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK RENEW -->
+<div class="ov ctr" id="ov-bulk">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title" style="text-align:center;display:block">⚡ تجديد جماعي</div>
+    <div class="sh-body" style="padding-top:0" id="bulk-body"></div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-bulk')">إلغاء</button>
+      <button class="btn bs" onclick="doBulkRenew()">✓ جدد الكل</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div class="ov" id="ov-charts">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>📊 الرسوم البيانية</span><div class="sh-close" onclick="closeOv('ov-charts')">✕</div></div>
+    <div class="sh-body">
+      <div class="chart-card"><div class="chart-title">📈 الدخل الشهري — آخر 6 أشهر</div><div class="chart-canvas"><canvas id="ch-income" height="180"></canvas></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="chart-card"><div class="chart-title">💳 حالة الدفع</div><div class="chart-canvas"><canvas id="ch-pay" height="160"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">📦 الباقات</div><div class="chart-canvas"><canvas id="ch-pkg" height="160"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- THEME -->
+<div class="ov" id="ov-theme">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>🎨 المظهر</span><div class="sh-close" onclick="closeOv('ov-theme')">✕</div></div>
+    <div class="sh-body">
+      <div class="theme-grid">
+        <div class="thm-card thm-light" data-th="light" onclick="setTheme('light')"><div class="check">✓</div>فاتح</div>
+        <div class="thm-card thm-dark" data-th="dark" onclick="setTheme('dark')"><div class="check">✓</div>داكن</div>
+        <div class="thm-card thm-midnight" data-th="midnight" onclick="setTheme('midnight')"><div class="check">✓</div>منتصف الليل</div>
+        <div class="thm-card thm-sand" data-th="sand" onclick="setTheme('sand')"><div class="check">✓</div>رملي</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MESSAGES -->
+<div class="ov" id="ov-msg">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>💬 رسائل واتساب</span><div class="sh-close" onclick="closeOv('ov-msg')">✕</div></div>
+    <div class="sh-body">
+      <div class="info-box">استخدم: <code style="background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--acc)">{name}</code> للاسم · <code style="background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--acc)">{date}</code> للتاريخ · <code style="background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--acc)">{days}</code> للأيام</div>
+      <div class="fg"><label class="fl">رسالة تذكير الانتهاء</label><textarea class="fi" id="m-expiry" rows="3" onchange="setting('msgExpiry',this.value)"></textarea>
+        <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
+          <button class="msg-tag" onclick="insertTag('m-expiry','{name}')">+ الاسم</button>
+          <button class="msg-tag" onclick="insertTag('m-expiry','{date}')">+ التاريخ</button>
+          <button class="msg-tag" onclick="insertTag('m-expiry','{days}')">+ الأيام</button>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">رسالة تأكيد استلام الدفع</label><textarea class="fi" id="m-paid" rows="3" onchange="setting('msgPaid',this.value)"></textarea>
+        <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
+          <button class="msg-tag" onclick="insertTag('m-paid','{name}')">+ الاسم</button>
+          <button class="msg-tag" onclick="insertTag('m-paid','{amount}')">+ المبلغ</button>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">رسالة ترحيب مشترك جديد</label><textarea class="fi" id="m-welcome" rows="3" onchange="setting('msgWelcome',this.value)"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT -->
+<div class="ov" id="ov-receipt">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>🧾 الفاتورة</span><div class="sh-close" onclick="closeOv('ov-receipt')">✕</div></div>
+    <div class="sh-body">
+      <div class="fg"><label class="fl">لون الفاتورة الرئيسي</label>
+        <div class="rc-row" id="rc-row">
+          <div class="rc-chip" data-c="#0070f3" style="background:#0070f3" onclick="selRC(this)"></div>
+          <div class="rc-chip" data-c="#10b981" style="background:#10b981" onclick="selRC(this)"></div>
+          <div class="rc-chip" data-c="#f59e0b" style="background:#f59e0b" onclick="selRC(this)"></div>
+          <div class="rc-chip" data-c="#ef4444" style="background:#ef4444" onclick="selRC(this)"></div>
+          <div class="rc-chip" data-c="#7c3aed" style="background:#7c3aed" onclick="selRC(this)"></div>
+          <div class="rc-chip" data-c="#0a0a0a" style="background:#0a0a0a" onclick="selRC(this)"></div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">شعار الفاتورة (نص أو رمز)</label><input class="fi" id="r-logo" placeholder="🌐 أو اسم شركتك" onchange="setting('receiptLogo',this.value)"></div>
+      <div class="fg"><label class="fl">نص تذييل الفاتورة</label><input class="fi" id="r-footer" placeholder="شكراً لاختيارك خدماتنا" onchange="setting('receiptFooter',this.value)"></div>
+      <div class="fg"><label class="fl">شكل الفاتورة</label>
+        <div class="rs-grid">
+          <div class="rs-card" data-rs="modern" onclick="selRS(this)"><div class="rs-card-t">عصري</div><div class="rs-card-d">Header ملوّن</div></div>
+          <div class="rs-card" data-rs="minimal" onclick="selRS(this)"><div class="rs-card-t">مبسّط</div><div class="rs-card-d">أبيض نظيف</div></div>
+          <div class="rs-card" data-rs="dark" onclick="selRS(this)"><div class="rs-card-t">داكن</div><div class="rs-card-d">خلفية سوداء</div></div>
+          <div class="rs-card" data-rs="compact" onclick="selRS(this)"><div class="rs-card-t">مضغوط</div><div class="rs-card-d">حجم صغير</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TELEGRAM -->
+<div class="ov" id="ov-tg">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>📱 تلغرام</span><div class="sh-close" onclick="closeOv('ov-tg')">✕</div></div>
+    <div class="sh-body">
+      <div class="info-box"><b>كيف تحصل على Bot Token:</b><br>1. افتح تلغرام ابحث عن <b>@BotFather</b><br>2. اكتب <b>/newbot</b> اختر اسماً<br>3. انسخ الـToken<br><br><b>كيف تحصل على Chat ID:</b><br>1. ابعث رسالة للبوت<br>2. افتح: <code style="background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--acc);font-size:10px">api.telegram.org/bot[TOKEN]/getUpdates</code><br>3. انسخ <b>chat.id</b></div>
+      <div class="fg"><label class="fl">Bot Token</label><input class="fi" id="tg-token" placeholder="123456789:AABBcc..." dir="ltr" style="font-family:'JetBrains Mono',monospace;font-size:12px" onchange="setting('tgToken',this.value)"></div>
+      <div class="fg"><label class="fl">Chat ID</label><input class="fi" id="tg-chatid" placeholder="123456789" dir="ltr" style="font-family:'JetBrains Mono',monospace;font-size:12px" onchange="setting('tgChatId',this.value)"></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn bs" onclick="testTG()">🧪 اختبار الاتصال</button>
+        <button class="btn bp" onclick="sendTGBackup()">📤 إرسال نسخة احتياطية</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="ov" id="ov-notif">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span>🔔 الإشعارات</span><div class="sh-close" onclick="closeOv('ov-notif')">✕</div></div>
+    <div class="sh-body">
+      <div class="info-box" id="notif-info-box">
+        <div id="notif-info-text">جاري التحقق من حالة الإشعارات...</div>
+      </div>
+      <button class="btn bp" id="notif-enable-btn" onclick="requestPush()" style="width:100%;margin-bottom:10px">🔔 تفعيل الإشعارات</button>
+      <div class="fg"><label class="fl">⏰ وقت الإشعار اليومي</label><input type="time" class="fi" id="notif-time" value="09:00" onchange="setting('notifTime',this.value)" style="font-family:'JetBrains Mono',monospace"></div>
+      <div class="fg"><label class="fl">🔑 VAPID Public Key (للـPush)</label><input class="fi" id="vapid-key" placeholder="BExxxx..." dir="ltr" style="font-family:'JetBrains Mono',monospace;font-size:12px" onchange="setting('vapidPublic',this.value)"></div>
+      <div class="info-box">يومياً في الوقت المحدد ستصلك ملخص للمشتركين القاربين على الانتهاء والمديونين. ولّد مفاتيحك من <b>vapidkeys.com</b></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bs" onclick="testPush()">🧪 إشعار تجريبي</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ─────────── SUPABASE ───────────
+const SB_URL='https://szljofrljstejsrmjzrs.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6bGpvZnJsanN0ZWpzcm1qenJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg5MjcsImV4cCI6MjA4OTYwNDkyN30.hotokJW4BXZwJYRm04-T2_rDTnKi32QGijE5dovqAtw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// ─────────── STATE ───────────
+let _subs=[],_pkgs=[30000,35000,40000,45000,50000,55000,60000,65000,80000,100000,120000];
+let _cfg={
+  bizName:'Rand ATM',adminPhone:'',alertDays:5,
+  msgExpiry:'مرحباً {name} 👋\nاشتراكك ينتهي خلال {days} يوم بتاريخ {date}\nيرجى التجديد قبل الانتهاء',
+  msgPaid:'مرحباً {name} ✓\nتم استلام مبلغ {amount} IQD بنجاح\nشكراً لك',
+  msgWelcome:'مرحباً {name} 🎉\nمرحباً بك معنا، اشتراكك مفعّل',
+  receiptColor:'#0070f3',receiptLogo:'',receiptFooter:'شكراً لاختيارك خدماتنا',receiptStyle:'modern',
+  tgToken:'',tgChatId:'',vapidPublic:'',notifTime:'09:00'
+};
+let _alertDays=5,_filter='all',_curEdit=null,_curView=null,_payChoice='paid',_curPage='home';
+let _bulkMode=false,_selected=new Set(),_bulkPay='paid',_charts={};
+
+// ─────────── HELPERS ───────────
+const $=id=>document.getElementById(id);
+const fmt=n=>(n||0).toLocaleString('en-US');
+const fmtK=n=>{n=+n||0;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return Math.round(n/1e3)+'K';return n.toString();};
+const pd=d=>{if(!d)return null;const[y,m,dy]=d.split('-').map(Number);const dt=new Date(y,m-1,dy);dt.setHours(0,0,0,0);return dt;};
+const fd=d=>{if(!d)return'—';return pd(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+const dl=s=>Math.ceil((pd(s.end_date)-today())/864e5);
+const status=s=>{const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;if(!isPaid)return'unpaid';const d=dl(s);if(d<0)return'expired';if(d<=_alertDays)return'expiring';return'active';};
+const toast=(m,t='s')=>{const el=document.createElement('div');el.className='toast '+t;el.textContent=(t==='e'?'⚠️ ':'✓ ')+m;$('toasts').appendChild(el);setTimeout(()=>el.remove(),3000);};
+const fmtToday=()=>new Date().toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long'});
+const greet=()=>{const h=new Date().getHours();if(h<5)return'مساء الخير';if(h<12)return'صباح الخير';if(h<17)return'طاب يومك';return'مساء الخير';};
+const esc=s=>(s||'').toString().replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+const buildMsg=(template,s)=>{const d=dl(s);return(template||'').replace(/{name}/g,s.name||'').replace(/{date}/g,fd(s.end_date)).replace(/{days}/g,d>=0?d:0).replace(/{amount}/g,fmt(s.price));};
+
+// ─────────── PIN / BIO ───────────
+const PIN_KEY='rand_pin_v1';
+const getPin=()=>localStorage.getItem(PIN_KEY)||'8787';
+let _pin='';
+function pin(n){if(_pin.length>=4)return;_pin+=n;updateDots();if(_pin.length===4)setTimeout(checkPin,180)}
+function pinDel(){_pin=_pin.slice(0,-1);updateDots()}
+function pinClear(){_pin='';updateDots()}
+function updateDots(){for(let i=0;i<4;i++)$('pd'+i).className='pdot'+(i<_pin.length?' on':'')}
+function checkPin(){
+  if(_pin===getPin()){
+    sessionStorage.setItem('lg','1');
+    $('login').style.display='none';$('app').style.display='flex';
+    initApp();
+  }else{
+    $('lerr').textContent='رمز غير صحيح';
+    [0,1,2,3].forEach(i=>$('pd'+i).classList.add('err'));
+    setTimeout(()=>{_pin='';[0,1,2,3].forEach(i=>$('pd'+i).className='pdot');$('lerr').textContent=''},700);
+  }
+}
+function changePIN(){
+  const np=prompt('PIN جديد (4 أرقام):');
+  if(!np||!/^\d{4}$/.test(np))return toast('أدخل 4 أرقام','e');
+  const c=prompt('أعد الإدخال:');if(c!==np)return toast('غير متطابق','e');
+  localStorage.setItem(PIN_KEY,np);toast('تم تغيير الرمز');
+}
+function logout(){if(!confirm('تسجيل خروج؟'))return;sessionStorage.removeItem('lg');location.reload()}
+
+// Biometric
+async function checkBio(){
+  if(!window.PublicKeyCredential)return false;
+  try{return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()}catch{return false}
+}
+async function initBio(){
+  const ok=await checkBio();const hasKey=localStorage.getItem('bio_cred_id');
+  if(ok&&hasKey)$('bio-btn').style.display='flex';
+  if($('bio-status'))$('bio-status').textContent=ok?(hasKey?'مفعّل':'متاح — اضغط للتفعيل'):'غير متاح على هذا الجهاز';
+}
+async function registerBio(){
+  const ok=await checkBio();
+  if(!ok)return toast('غير متاح على هذا الجهاز','e');
+  try{
+    const ch=new Uint8Array(32);crypto.getRandomValues(ch);
+    const cred=await navigator.credentials.create({
+      publicKey:{
+        challenge:ch,
+        rp:{name:'Rand ATM',id:location.hostname},
+        user:{id:new TextEncoder().encode('rand-user'),name:'rand',displayName:'Rand User'},
+        pubKeyCredParams:[{alg:-7,type:'public-key'},{alg:-257,type:'public-key'}],
+        authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+        timeout:60000
+      }
+    });
+    if(cred){
+      const id=btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
+      localStorage.setItem('bio_cred_id',id);
+      toast('تم تفعيل البصمة');initBio();
+    }
+  }catch(e){toast('فشل التفعيل','e')}
+}
+async function tryBio(){
+  const id=localStorage.getItem('bio_cred_id');if(!id)return;
+  try{
+    const ch=new Uint8Array(32);crypto.getRandomValues(ch);
+    const rawId=Uint8Array.from(atob(id),c=>c.charCodeAt(0));
+    await navigator.credentials.get({
+      publicKey:{
+        challenge:ch,
+        allowCredentials:[{type:'public-key',id:rawId}],
+        userVerification:'required',
+        timeout:60000
+      }
+    });
+    sessionStorage.setItem('lg','1');
+    $('login').style.display='none';$('app').style.display='flex';
+    initApp();
+  }catch{toast('فشلت المصادقة','e')}
+}
+
+// ─────────── DATA LOAD ───────────
+async function loadAll(){
+  await Promise.all([loadSubs(),loadCfg(),loadPkgs()]);
+  applyName();applyCfg();render();
+}
+async function loadSubs(){
+  const{data,error}=await sb.from('subscribers').select('*').order('name');
+  if(error){console.error(error);return toast('فشل التحميل','e');}
+  _subs=data||[];
+}
+async function loadCfg(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','settings').maybeSingle();
+  if(data?.value)_cfg={..._cfg,...data.value};
+  _alertDays=+_cfg.alertDays||5;
+}
+async function loadPkgs(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','packages').maybeSingle();
+  if(data?.value&&Array.isArray(data.value))_pkgs=data.value;
+  renderPkgs();renderSetPkgs();
+}
+async function loadTheme(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','theme').maybeSingle();
+  const t=data?.value||localStorage.getItem('rand_theme')||'light';
+  setTheme(t,true);
+}
+async function setting(k,v){
+  _cfg[k]=v;
+  await sb.from('app_settings').upsert({key:'settings',value:_cfg,updated_at:new Date().toISOString()});
+}
+async function savePkgs(){await sb.from('app_settings').upsert({key:'packages',value:_pkgs,updated_at:new Date().toISOString()})}
+
+function applyName(){
+  const n=_cfg.bizName||'Rand ATM';
+  $('biz-name').textContent=n;$('login-title').textContent=n;document.title=n;
+}
+function applyCfg(){
+  $('set-biz').value=_cfg.bizName||'';$('set-phone').value=_cfg.adminPhone||'';
+  $('set-alert').value=_alertDays;
+  $('m-expiry').value=_cfg.msgExpiry||'';$('m-paid').value=_cfg.msgPaid||'';$('m-welcome').value=_cfg.msgWelcome||'';
+  $('r-logo').value=_cfg.receiptLogo||'';$('r-footer').value=_cfg.receiptFooter||'';
+  $('tg-token').value=_cfg.tgToken||'';$('tg-chatid').value=_cfg.tgChatId||'';
+  $('notif-time').value=_cfg.notifTime||'09:00';$('vapid-key').value=_cfg.vapidPublic||'';
+  $('tg-status').textContent=(_cfg.tgToken&&_cfg.tgChatId)?'مفعّل ✓':'غير مفعّل';
+  document.querySelectorAll('.rc-chip').forEach(c=>c.classList.toggle('on',c.dataset.c===_cfg.receiptColor));
+  document.querySelectorAll('.rs-card').forEach(c=>c.classList.toggle('on',c.dataset.rs===_cfg.receiptStyle));
+}
+
+// ─────────── NAVIGATION ───────────
+function goPage(p,el){
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');else document.querySelector(`.bnav-item[data-page="${p}"]`).classList.add('on');
+  document.querySelectorAll('.page').forEach(pg=>pg.classList.remove('on'));
+  $('p-'+p).classList.add('on');_curPage=p;$('body').scrollTop=0;
+  if(_bulkMode&&p!=='list')cancelBulk();
+}
+function goList(filter){
+  goPage('list');
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===filter));
+  _filter=filter;renderList();
+}
+
+// ─────────── RENDER ───────────
+function render(){updateStats();renderHomeAttn();renderHomePkg();renderList();}
+
+function updateStats(){
+  let act=0,exp=0,ded=0,unp=0,inc=0,debt=0;
+  _subs.forEach(s=>{
+    const st=status(s);
+    if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;else if(st==='unpaid')unp++;
+    if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
+  });
+  $('qst-tot').textContent=_subs.length;$('qst-act').textContent=act;
+  $('qst-exp').textContent=exp;$('qst-ded').textContent=ded;
+  $('kpi-inc').textContent=fmtK(inc);$('kpi-debt').textContent=fmtK(debt);
+  $('kpi-debt-cnt').textContent=unp+' مشترك';
+  $('rep-inc').textContent=fmt(inc)+' IQD';
+  $('rep-debt').textContent=fmt(debt)+' IQD';
+  $('rep-debt-cnt').textContent=unp+' مشترك';
+  $('attn-cnt').textContent=`عرض الكل (${exp+ded+unp}) ›`;
+}
+
+function renderHomeAttn(){
+  const attn=_subs.filter(s=>{const st=status(s);return st==='unpaid'||st==='expired'||st==='expiring'});
+  attn.sort((a,b)=>{const ord={unpaid:0,expired:1,expiring:2};const sa=status(a),sb_=status(b);if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];return dl(a)-dl(b);});
+  const top=attn.slice(0,5);
+  if(!top.length){$('attn-list').innerHTML='<div class="attn-empty">✨ ممتاز! لا أحد يحتاج متابعة الآن</div>';return;}
+  $('attn-list').innerHTML=top.map(s=>{
+    const st=status(s),d=dl(s);
+    let reason='';
+    if(st==='unpaid')reason='💸 لم يدفع — '+fmt(s.debt||s.price)+' IQD';
+    else if(st==='expired')reason=`✕ منتهي منذ ${Math.abs(d)} يوم`;
+    else reason=`⚡ ينتهي خلال ${d} ${d===1?'يوم':'أيام'}`;
+    const actBtn=st==='unpaid'?'تسديد':st==='expired'?'تجديد':'تذكير';
+    return `<div class="attn-row ${st}" onclick="openProfile('${s.id}')"><div class="attn-ind"></div><div class="attn-info"><div class="attn-name">${esc(s.name)}</div><div class="attn-reason">${reason}</div></div><div class="attn-act">${actBtn}</div></div>`;
+  }).join('');
+}
+
+function renderHomePkg(){
+  const map=new Map();
+  _subs.forEach(s=>{const p=+s.price||0;map.set(p,(map.get(p)||0)+1);});
+  const arr=[...map.entries()].sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const max=Math.max(...arr.map(([,c])=>c),1);
+  if(!arr.length){$('pkg-stats').innerHTML='<div class="attn-empty">لا توجد باقات بعد</div>';return;}
+  $('pkg-stats').innerHTML=arr.map(([p,c])=>`<div class="pkg-item"><div class="pkg-amt">${fmt(p)}</div><div class="pkg-bar"><div class="pkg-bar-f" style="width:${(c/max)*100}%"></div></div><div class="pkg-cnt">${c} مشترك</div></div>`).join('');
+}
+
+function setF(el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');_filter=el.dataset.f;renderList();
+}
+function renderList(){
+  const q=$('search').value.trim().toLowerCase();
+  let arr=[..._subs];
+  if(q)arr=arr.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.username||'').toLowerCase().includes(q)||(s.phone||'').includes(q));
+  if(_filter==='attention')arr=arr.filter(s=>['unpaid','expired','expiring'].includes(status(s)));
+  else if(_filter!=='all')arr=arr.filter(s=>status(s)===_filter);
+  arr.sort((a,b)=>{const ord={unpaid:0,expired:1,expiring:2,active:3};const sa=status(a),sb_=status(b);if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];return dl(a)-dl(b);});
+  $('cnt-pill').textContent=arr.length;
+  const list=$('list');
+  if(!arr.length){list.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>لا يوجد مشتركين</div></div>';return;}
+  list.innerHTML=arr.map(s=>{
+    const st=status(s),d=dl(s);
+    const dlbl=d<0?`منتهي ${Math.abs(d)}ي`:d===0?'اليوم':`${d}ي`;
+    const sel=_selected.has(s.id)?'selected':'';
+    return `<div class="scard ${st} ${sel}" data-id="${s.id}" onclick="cardClick('${s.id}',event)"><div class="s-check">${sel?'✓':''}</div><div class="s-av">${(s.name||'؟')[0]}</div><div class="s-info"><div class="s-name">${esc(s.name)}</div><div class="s-sub">@${esc(s.username)}</div></div><div class="s-r"><div class="s-price">${fmt(s.price)}</div><div class="s-days">${dlbl}</div></div></div>`;
+  }).join('');
+}
+
+// ─────────── BULK ───────────
+function toggleBulk(){
+  _bulkMode=!_bulkMode;
+  $('bulk-tgl').classList.toggle('on',_bulkMode);
+  $('list').classList.toggle('bulk-mode',_bulkMode);
+  document.querySelector('.list').classList.toggle('bulk-mode',_bulkMode);
+  if(!_bulkMode){_selected.clear();$('bulk-bar').classList.remove('show');}
+  else{updateBulkBar();$('bulk-bar').classList.add('show');}
+  renderList();
+}
+function cardClick(id,e){
+  if(_bulkMode){
+    if(_selected.has(id))_selected.delete(id);else _selected.add(id);
+    updateBulkBar();renderList();
+  }else{openProfile(id);}
+}
+function updateBulkBar(){
+  $('bulk-cnt').textContent=`${_selected.size} مشترك`;
+  if(_selected.size===0&&_bulkMode){/* keep open */}
+}
+function cancelBulk(){_bulkMode=false;_selected.clear();$('bulk-tgl').classList.remove('on');$('bulk-bar').classList.remove('show');document.querySelector('.list').classList.remove('bulk-mode');renderList();}
+
+function bulkWA(){
+  if(_selected.size===0)return toast('اختر مشتركين أولاً','e');
+  const sel=_subs.filter(s=>_selected.has(s.id));
+  const phones=sel.filter(s=>s.phone).map(s=>{
+    const tpl=_cfg.msgExpiry||'';const msg=encodeURIComponent(buildMsg(tpl,s));
+    return `https://wa.me/964${(s.phone||'').replace(/^0/,'')}?text=${msg}`;
+  });
+  if(!phones.length)return toast('لا يوجد أرقام','e');
+  toast(`جاري فتح ${phones.length} محادثة...`);
+  phones.forEach((url,i)=>setTimeout(()=>window.open(url,'_blank'),i*400));
+}
+
+function openBulkRenew(){
+  if(_selected.size===0)return toast('اختر مشتركين أولاً','e');
+  const sel=_subs.filter(s=>_selected.has(s.id));
+  const total=sel.reduce((sum,s)=>sum+(+s.price||0),0);
+  $('bulk-body').innerHTML=`
+    <div style="text-align:center;padding:6px 0 16px">
+      <div style="font-size:18px;font-weight:900;margin-bottom:8px">${sel.length} مشترك</div>
+      <div style="font-size:13px;color:var(--tx3);line-height:1.8">
+        تجديد ${sel.length} اشتراك<br>
+        المبلغ الإجمالي: <b style="color:var(--green)">${fmt(total)} IQD</b><br>
+        لمدة 30 يوم لكل مشترك
+      </div>
+    </div>
+    <div class="ptog">
+      <button class="pt paid on" id="brn-p" onclick="document.getElementById('brn-p').classList.add('on');document.getElementById('brn-u').classList.remove('on');_bulkPay='paid'">✓ مسدد</button>
+      <button class="pt unpaid" id="brn-u" onclick="document.getElementById('brn-u').classList.add('on');document.getElementById('brn-p').classList.remove('on');_bulkPay='unpaid'">✕ غير مسدد</button>
+    </div>`;
+  show('ov-bulk');
+}
+async function doBulkRenew(){
+  const sel=_subs.filter(s=>_selected.has(s.id));
+  const isPaid=_bulkPay==='paid';
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  let ok=0;
+  for(const s of sel){
+    const newDebt=isPaid?0:(+(s.debt||0)+ +s.price);
+    const{error}=await sb.from('subscribers').update({start_date:today,end_date:newEnd,is_paid:isPaid,debt:newDebt,updated_at:new Date().toISOString()}).eq('id',s.id);
+    if(!error)ok++;
+  }
+  toast(`تم تجديد ${ok} اشتراك`);
+  closeOv('ov-bulk');cancelBulk();await loadSubs();render();
+}
+
+// ─────────── PACKAGES ───────────
+function renderPkgs(){$('pkg-row').innerHTML=_pkgs.map(p=>`<div class="pkg" onclick="pickPkg(${p},this)">${fmt(p)}</div>`).join('')}
+function pickPkg(p,el){document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));el.classList.add('on');$('f-price').value=p;}
+function renderSetPkgs(){$('set-pkgs').innerHTML=_pkgs.map((p,i)=>`<div class="pkg on" onclick="rmPkg(${i})">${fmt(p)} ✕</div>`).join('')}
+async function addPkg(){
+  const v=+$('new-pkg').value;
+  if(!v||v<1000)return toast('سعر غير صحيح','e');
+  if(_pkgs.includes(v))return toast('موجود','e');
+  _pkgs.push(v);_pkgs.sort((a,b)=>a-b);
+  await savePkgs();$('new-pkg').value='';renderPkgs();renderSetPkgs();toast('أضيفت');
+}
+async function rmPkg(i){
+  if(!confirm('حذف؟'))return;
+  _pkgs.splice(i,1);await savePkgs();renderPkgs();renderSetPkgs();toast('حُذفت');
+}
+
+// ─────────── ADD/EDIT ───────────
+function openAdd(){
+  _curEdit=null;$('form-title').textContent='مشترك جديد';$('del-btn').style.display='none';
+  ['f-name','f-phone','f-user','f-price','f-pw','f-notes'].forEach(i=>$(i).value='');
+  const t=new Date(),s=t.toISOString().slice(0,10);
+  $('f-start').value=s;
+  const e=new Date(t);e.setDate(e.getDate()+30);$('f-end').value=e.toISOString().slice(0,10);
+  setPay('paid');
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  show('ov-form');
+}
+function openEdit(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curEdit=id;$('form-title').textContent='تعديل';$('del-btn').style.display='flex';
+  $('f-name').value=s.name||'';$('f-phone').value=s.phone||'';
+  $('f-user').value=s.username||'';$('f-price').value=s.price||'';
+  $('f-pw').value=s.password||'';$('f-start').value=s.start_date||'';
+  $('f-end').value=s.end_date||'';$('f-notes').value=s.note||'';
+  setPay(s.is_paid?'paid':'unpaid');show('ov-form');
+}
+function setPay(p){_payChoice=p;$('pt-p').classList.toggle('on',p==='paid');$('pt-u').classList.toggle('on',p==='unpaid')}
+async function saveSub(){
+  const name=$('f-name').value.trim(),user=$('f-user').value.trim(),price=+$('f-price').value;
+  if(!name)return toast('الاسم مطلوب','e');
+  if(!user)return toast('اسم المستخدم مطلوب','e');
+  if(!price||price<1000)return toast('السعر غير صحيح','e');
+  const s={name,username:user,phone:$('f-phone').value.trim()||null,password:$('f-pw').value.trim()||null,price,start_date:$('f-start').value,end_date:$('f-end').value,note:$('f-notes').value.trim()||null,is_paid:_payChoice==='paid',debt:_payChoice==='paid'?0:price,updated_at:new Date().toISOString()};
+  if(_curEdit){const{error}=await sb.from('subscribers').update(s).eq('id',_curEdit);if(error)return toast('فشل','e');toast('تم التعديل');}
+  else{const{error}=await sb.from('subscribers').insert(s);if(error){console.error(error);return toast('فشل (يوزر مكرر؟)','e');}toast('أُضيف');}
+  closeOv('ov-form');await loadSubs();render();
+}
+async function delSub(){
+  if(!_curEdit||!confirm('حذف نهائياً؟'))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curEdit);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-form');await loadSubs();render();
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='f-start'){const v=e.target.value;if(v){const d=new Date(v);d.setDate(d.getDate()+30);$('f-end').value=d.toISOString().slice(0,10);}}
+});
+
+// ─────────── PROFILE ───────────
+function openProfile(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curView=id;
+  const st=status(s),d=dl(s);
+  $('prof-av').textContent=(s.name||'؟')[0];
+  $('prof-name').textContent=s.name;$('prof-user').textContent='@'+s.username;
+  const stLbl={active:'نشط',expiring:'قارب على الانتهاء',expired:'منتهي',unpaid:'غير مسدد'}[st];
+  const dV=d<0?'r':d<=_alertDays?'a':'g';
+  const dT=d<0?`منتهي منذ ${Math.abs(d)} يوم`:`متبقي ${d} يوم`;
+  $('prof-body').innerHTML=`
+    <div class="prof-row"><span class="prof-k">📊 الحالة</span><span class="prof-v ${dV}">${stLbl}</span></div>
+    <div class="prof-row"><span class="prof-k">💰 الباقة</span><span class="prof-v">${fmt(s.price)} IQD</span></div>
+    <div class="prof-row"><span class="prof-k">📞 الهاتف</span><span class="prof-v">${s.phone||'—'}</span></div>
+    <div class="prof-row"><span class="prof-k">📅 البداية</span><span class="prof-v">${fd(s.start_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">⏰ الانتهاء</span><span class="prof-v ${dV}">${fd(s.end_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">⏳ المتبقي</span><span class="prof-v ${dV}">${dT}</span></div>
+    <div class="prof-row"><span class="prof-k">💳 الدفع</span><span class="prof-v ${s.is_paid?'g':'r'}">${s.is_paid?'✓ مسدد':'✕ غير مسدد'}</span></div>
+    ${s.debt>0?`<div class="prof-row"><span class="prof-k">💸 الدين</span><span class="prof-v r">${fmt(s.debt)} IQD</span></div>`:''}
+    ${s.password?`<div class="prof-row"><span class="prof-k">🔑 المرور</span><span class="prof-v">${esc(s.password)}</span></div>`:''}
+    ${s.note?`<div class="prof-row"><span class="prof-k">📝 ملاحظات</span><span class="prof-v" style="font-family:inherit;color:var(--tx2);font-weight:600;text-align:left;max-width:60%">${esc(s.note)}</span></div>`:''}`;
+  show('ov-profile');
+}
+function profEdit(){const id=_curView;closeOv('ov-profile');setTimeout(()=>openEdit(id),200)}
+async function profDel(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  if(!confirm(`حذف "${s.name}"؟`))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curView);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-profile');await loadSubs();render();
+}
+function profWA(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const phone=(s.phone||'').replace(/^0/,'');
+  if(!phone)return toast('لا يوجد رقم','e');
+  const tpl=status(s)==='unpaid'?(_cfg.msgPaid||''):(_cfg.msgExpiry||'');
+  const msg=encodeURIComponent(buildMsg(tpl,s));
+  window.open(`https://wa.me/964${phone}?text=${msg}`,'_blank');
+}
+function profRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  $('renew-body').innerHTML=`
+    <div style="text-align:center;padding:6px 0 16px">
+      <div style="font-size:18px;font-weight:900;margin-bottom:8px;letter-spacing:-.4px">${esc(s.name)}</div>
+      <div style="font-size:13px;color:var(--tx3);line-height:1.8">
+        من <b style="color:var(--tx);font-family:monospace">${fd(today)}</b><br>
+        إلى <b style="color:var(--green);font-family:monospace">${fd(newEnd)}</b><br>
+        المبلغ: <b style="color:var(--acc)">${fmt(s.price)} IQD</b>
+      </div>
+    </div>
+    <div class="ptog">
+      <button class="pt paid on" id="rn-p" onclick="document.getElementById('rn-p').classList.add('on');document.getElementById('rn-u').classList.remove('on')">✓ مسدد</button>
+      <button class="pt unpaid" id="rn-u" onclick="document.getElementById('rn-u').classList.add('on');document.getElementById('rn-p').classList.remove('on')">✕ غير مسدد</button>
+    </div>`;
+  closeOv('ov-profile');setTimeout(()=>show('ov-renew'),250);
+}
+async function doRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const isPaid=$('rn-p').classList.contains('on');
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  const newDebt=isPaid?0:(+(s.debt||0)+ +s.price);
+  const{error}=await sb.from('subscribers').update({start_date:today,end_date:newEnd,is_paid:isPaid,debt:newDebt,updated_at:new Date().toISOString()}).eq('id',s.id);
+  if(error)return toast('فشل','e');
+  toast('تم التجديد');closeOv('ov-renew');await loadSubs();render();
+}
+
+// ─────────── CHARTS ───────────
+function openCharts(){show('ov-charts');setTimeout(drawCharts,150);}
+function drawCharts(){
+  Object.values(_charts).forEach(c=>c&&c.destroy());
+  const isDark=['dark','midnight'].includes(document.documentElement.dataset.theme);
+  const txt=isDark?'#a3a3a3':'#525252';
+  const grid=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.05)';
+
+  // Income (last 6 months)
+  const now=new Date();
+  const months=[];
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(d);}
+  const labels=months.map(d=>d.toLocaleDateString('ar-IQ',{month:'short'}));
+  const incomeData=months.map(m=>{
+    const ms=m.getMonth(),ys=m.getFullYear();
+    return _subs.filter(s=>{
+      if(!s.start_date)return false;
+      const d=pd(s.start_date);
+      return d.getMonth()===ms&&d.getFullYear()===ys&&(s.is_paid===true||s.is_paid==='true'||s.is_paid===1);
+    }).reduce((sum,s)=>sum+(+s.price||0),0);
+  });
+  _charts.income=new Chart($('ch-income'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'IQD',data:incomeData,backgroundColor:'#0070f3',borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:txt,callback:v=>fmtK(v)},grid:{color:grid}},x:{ticks:{color:txt},grid:{display:false}}}}
+  });
+
+  // Pay status
+  let p=0,u=0;
+  _subs.forEach(s=>{(s.is_paid===true||s.is_paid==='true'||s.is_paid===1)?p++:u++});
+  _charts.pay=new Chart($('ch-pay'),{
+    type:'doughnut',
+    data:{labels:['مسدد','غير مسدد'],datasets:[{data:[p,u],backgroundColor:['#10b981','#ef4444'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:txt,font:{size:10}}}}}
+  });
+
+  // Packages
+  const pmap=new Map();
+  _subs.forEach(s=>{pmap.set(s.price,(pmap.get(s.price)||0)+1)});
+  const parr=[...pmap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  _charts.pkg=new Chart($('ch-pkg'),{
+    type:'doughnut',
+    data:{labels:parr.map(([p])=>fmtK(p)),datasets:[{data:parr.map(([,c])=>c),backgroundColor:['#0070f3','#10b981','#f59e0b','#ef4444','#8b5cf6'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:txt,font:{size:10}}}}}
+  });
+}
+
+// ─────────── THEME ───────────
+function openTheme(){
+  document.querySelectorAll('.thm-card').forEach(c=>c.classList.toggle('on',c.dataset.th===document.documentElement.dataset.theme));
+  show('ov-theme');
+}
+function setTheme(t,silent){
+  document.documentElement.dataset.theme=t;
+  localStorage.setItem('rand_theme',t);
+  if(!silent)sb.from('app_settings').upsert({key:'theme',value:t,updated_at:new Date().toISOString()}).then(()=>{});
+  const colors={light:'#fafafa',dark:'#0a0a0a',midnight:'#000',sand:'#faf6f0'};
+  $('theme-color').setAttribute('content',colors[t]||'#fafafa');
+  document.querySelectorAll('.thm-card').forEach(c=>c.classList.toggle('on',c.dataset.th===t));
+  $('theme-d').textContent={light:'فاتح',dark:'داكن',midnight:'منتصف الليل',sand:'رملي'}[t]||'فاتح';
+}
+
+// ─────────── MESSAGES ───────────
+function openMessages(){show('ov-msg')}
+function insertTag(id,tag){
+  const el=$(id);const start=el.selectionStart,end=el.selectionEnd;
+  el.value=el.value.slice(0,start)+tag+el.value.slice(end);
+  el.focus();el.selectionStart=el.selectionEnd=start+tag.length;
+  el.dispatchEvent(new Event('change'));
+}
+
+// ─────────── RECEIPT ───────────
+function openReceipt(){show('ov-receipt')}
+function selRC(el){document.querySelectorAll('.rc-chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');setting('receiptColor',el.dataset.c);}
+function selRS(el){document.querySelectorAll('.rs-card').forEach(c=>c.classList.remove('on'));el.classList.add('on');setting('receiptStyle',el.dataset.rs);}
+
+// ─────────── EXPORTS ───────────
+function exportJSON(){
+  const data={
+    exported_at:new Date().toISOString(),
+    settings:_cfg,packages:_pkgs,subscribers:_subs
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`rand-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('تم تصدير الملف');
+}
+async function importJSON(input){
+  const file=input.files[0];if(!file)return;
+  if(!confirm('سيستبدل البيانات الحالية. متأكد؟'))return;
+  try{
+    const txt=await file.text();
+    const data=JSON.parse(txt);
+    if(data.subscribers&&Array.isArray(data.subscribers)){
+      // Insert all
+      let ok=0;
+      for(const s of data.subscribers){
+        delete s.id;
+        const{error}=await sb.from('subscribers').upsert(s,{onConflict:'username'});
+        if(!error)ok++;
+      }
+      toast(`استورد ${ok} مشترك`);
+    }
+    if(data.settings)await sb.from('app_settings').upsert({key:'settings',value:data.settings,updated_at:new Date().toISOString()});
+    if(data.packages)await sb.from('app_settings').upsert({key:'packages',value:data.packages,updated_at:new Date().toISOString()});
+    await loadAll();
+  }catch(e){toast('ملف غير صالح','e')}
+  input.value='';
+}
+function exportExcel(){
+  const rows=_subs.map(s=>({
+    'الاسم':s.name,'المستخدم':s.username,'الهاتف':s.phone||'',
+    'السعر':s.price,'البداية':fd(s.start_date),'النهاية':fd(s.end_date),
+    'متبقي':dl(s),'الدفع':s.is_paid?'مسدد':'غير مسدد',
+    'الدين':s.debt||0,'ملاحظات':s.note||''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Subscribers');
+  XLSX.writeFile(wb,`rand-${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('تم تصدير Excel');
+}
+function exportPDF(){
+  const w=window.open('','_blank','width=800,height=900');
+  let inc=0,debt=0;
+  _subs.forEach(s=>{const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;if(isPaid)inc+=+s.price||0;else debt+=+(s.debt||s.price||0);});
+  const html=`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير ${_cfg.bizName||'Rand ATM'}</title><style>
+    body{font-family:'Tajawal',sans-serif;padding:30px;color:#0a0a0a}
+    h1{margin-bottom:5px}h3{color:#525252;margin-bottom:30px}
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    th{background:${_cfg.receiptColor||'#0070f3'};color:#fff;padding:10px 8px;text-align:right;font-size:12px}
+    td{padding:8px;border-bottom:1px solid #eee;font-size:11px}
+    tr:nth-child(even){background:#fafafa}
+    .stats{display:flex;gap:14px;margin-bottom:24px}
+    .stat{flex:1;background:#f5f5f7;padding:14px;border-radius:8px}
+    .stat-l{font-size:11px;color:#525252;font-weight:600}
+    .stat-v{font-size:22px;font-weight:900;margin-top:4px}
+    @media print{body{padding:10mm}}
+  </style></head><body>
+    <h1>${_cfg.bizName||'Rand ATM'}</h1>
+    <h3>تقرير شهري — ${new Date().toLocaleDateString('ar-IQ',{day:'numeric',month:'long',year:'numeric'})}</h3>
+    <div class="stats">
+      <div class="stat"><div class="stat-l">المشتركون</div><div class="stat-v">${_subs.length}</div></div>
+      <div class="stat"><div class="stat-l">الدخل الشهري</div><div class="stat-v" style="color:#10b981">${fmt(inc)} IQD</div></div>
+      <div class="stat"><div class="stat-l">الديون</div><div class="stat-v" style="color:#ef4444">${fmt(debt)} IQD</div></div>
+    </div>
+    <table><thead><tr><th>#</th><th>الاسم</th><th>المستخدم</th><th>الباقة</th><th>الانتهاء</th><th>الحالة</th></tr></thead>
+    <tbody>${_subs.map((s,i)=>{const st=status(s);const lbl={active:'نشط',expiring:'قارب',expired:'منتهي',unpaid:'دين'}[st];return `<tr><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.username)}</td><td>${fmt(s.price)}</td><td>${fd(s.end_date)}</td><td>${lbl}</td></tr>`}).join('')}</tbody></table>
+    <p style="margin-top:30px;font-size:11px;color:#888;text-align:center">${_cfg.receiptFooter||'شكراً'}</p>
+    <script>window.print()<\/script>
+  </body></html>`;
+  w.document.write(html);w.document.close();
+  toast('جاري إعداد PDF...');
+}
+
+// ─────────── TELEGRAM ───────────
+function openTelegram(){show('ov-tg')}
+async function testTG(){
+  const t=_cfg.tgToken,c=_cfg.tgChatId;
+  if(!t||!c)return toast('أدخل Token و Chat ID','e');
+  try{
+    const r=await fetch(`https://api.telegram.org/bot${t}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:c,text:'✅ اختبار نجح\n'+new Date().toLocaleString('ar-IQ')})
+    });
+    const j=await r.json();
+    if(j.ok)toast('وصلت الرسالة');else toast('فشل: '+(j.description||'خطأ'),'e');
+  }catch{toast('فشل الاتصال','e')}
+}
+async function sendTGBackup(){
+  const t=_cfg.tgToken,c=_cfg.tgChatId;
+  if(!t||!c)return toast('أدخل Token و Chat ID','e');
+  let inc=0,debt=0,act=0,exp=0,ded=0,unp=0;
+  _subs.forEach(s=>{
+    const st=status(s);if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;else unp++;
+    if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
+  });
+  const msg=`📊 *${_cfg.bizName||'Rand ATM'}*\n📅 ${new Date().toLocaleDateString('ar-IQ')}\n\n👥 المشتركون: *${_subs.length}*\n✓ نشط: ${act} | ⚡ قارب: ${exp} | ✕ منتهي: ${ded} | 💸 دين: ${unp}\n\n📈 الدخل: *${fmt(inc)} IQD*\n💸 الديون: *${fmt(debt)} IQD*`;
+  try{
+    const r=await fetch(`https://api.telegram.org/bot${t}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:c,text:msg,parse_mode:'Markdown'})
+    });
+    const j=await r.json();
+    if(j.ok){
+      // Send JSON file too
+      const data={exported_at:new Date().toISOString(),settings:_cfg,packages:_pkgs,subscribers:_subs};
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const fd=new FormData();
+      fd.append('chat_id',c);fd.append('document',blob,`backup-${new Date().toISOString().slice(0,10)}.json`);
+      await fetch(`https://api.telegram.org/bot${t}/sendDocument`,{method:'POST',body:fd});
+      toast('تم الإرسال');
+    }else toast('فشل: '+(j.description||''),'e');
+  }catch{toast('فشل الإرسال','e')}
+}
+
+// ─────────── PUSH NOTIFICATIONS ───────────
+function openNotif(){show('ov-notif');updatePushStatus()}
+function urlBase64ToUint8Array(b64){const padding='='.repeat((4-b64.length%4)%4);const b=(b64+padding).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(b);return new Uint8Array([...raw].map(c=>c.charCodeAt(0)));}
+async function updatePushStatus(){
+  const supported='serviceWorker' in navigator&&'PushManager' in window;
+  if(!supported){
+    $('notif-info-text').innerHTML='⚠️ هذا المتصفح لا يدعم الإشعارات';
+    $('push-status').textContent='غير مدعوم';
+    $('notif-enable-btn').style.display='none';
+    return;
+  }
+  const perm=Notification.permission;
+  if(perm==='granted'){
+    $('notif-info-text').innerHTML='✓ الإشعارات مفعّلة';
+    $('push-status').textContent='مفعّل ✓';
+    $('notif-enable-btn').textContent='✓ مفعّل';
+  }else if(perm==='denied'){
+    $('notif-info-text').innerHTML='⚠️ تم حظر الإشعارات. فعّلها من إعدادات المتصفح';
+    $('push-status').textContent='محظور';
+  }else{
+    $('notif-info-text').innerHTML='🔔 اضغط للتفعيل';
+    $('push-status').textContent='غير مفعّل';
+  }
+}
+async function requestPush(){
+  if(!('Notification' in window))return toast('غير مدعوم','e');
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted')return toast('تم رفض الإذن','e');
+  toast('تم تفعيل الإشعارات');
+  updatePushStatus();
+  // If VAPID key present, subscribe
+  if(_cfg.vapidPublic){
+    try{
+      const reg=await navigator.serviceWorker.ready;
+      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(_cfg.vapidPublic)});
+      await sb.from('app_settings').upsert({key:'push_subscription',value:sub.toJSON(),updated_at:new Date().toISOString()});
+    }catch(e){console.error(e)}
+  }
+}
+async function testPush(){
+  if(Notification.permission!=='granted')return toast('فعّل الإشعارات أولاً','e');
+  const reg=await navigator.serviceWorker.ready;
+  reg.showNotification('🔔 Rand ATM',{body:'هذا إشعار تجريبي',icon:'icon-192.png',vibrate:[200,100,200]});
+  toast('أُرسل');
+}
+
+// ─────────── INIT ───────────
+function show(id){$(id).classList.add('show')}
+function closeOv(id){$(id).classList.remove('show')}
+
+async function initApp(){
+  $('hdate').textContent=fmtToday();
+  $('greet-t').textContent=greet();
+  await loadTheme();
+  await loadAll();
+  initBio();
+}
+
+// Auto-login if session
+if(sessionStorage.getItem('lg')==='1'){
+  $('login').style.display='none';$('app').style.display='flex';
+  initApp();
+}else{
+  // load theme on login screen too
+  loadTheme();
+  initBio();
+}
+
+// Outside click closes
+document.querySelectorAll('.ov').forEach(ov=>{ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show')})});
+
+// Service Worker
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{});}
+</script>
+</body>
+</html>

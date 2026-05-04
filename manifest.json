@@ -1,0 +1,22 @@
+{
+  "name": "Rand ATM",
+  "short_name": "Rand ATM",
+  "description": "نظام إدارة مشتركين الإنترنت — هيكلية نظيفة v2",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafafa",
+  "theme_color": "#fafafa",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {"src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "categories": ["business", "finance"],
+  "shortcuts": [
+    {"name": "إضافة مشترك", "url": "./index.html?action=add", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]},
+    {"name": "المشتركون", "url": "./index.html?page=list", "icons": [{"src": "./icon-192.png", "sizes": "192x192"}]}
+  ]
+}

@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rand ATM — Neon Cyberpunk</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="../app/manifest.json">
+<link rel="apple-touch-icon" href="../app/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#020208;
+  --bg2:#070713;
+  --bg3:#0a0a18;
+  --panel:rgba(0,30,25,.5);
+  --panel2:rgba(5,5,20,.7);
+  --tx:#e0fff8;
+  --tx2:#5cc99a;
+  --tx3:#1a5544;
+  --neon:#00ffb0;
+  --neon2:#00e5ff;
+  --neon3:#ff10aa;
+  --neon4:#ffd700;
+  --red:#ff2e60;
+  --grid:rgba(0,255,180,.04);
+}
+html{height:100%;background:#020208;overflow:hidden;position:fixed;width:100%;color-scheme:dark;-webkit-text-size-adjust:100%}
+body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:'Tajawal','JetBrains Mono',monospace,sans-serif;
+  background:#020208;color:var(--tx);
+  user-select:none;-webkit-user-select:none;
+}
+input,button,select,textarea{font-family:inherit;font-size:16px;-webkit-appearance:none;outline:none;border:none;color:inherit;background:none}
+
+#app,#login{position:fixed;inset:0;display:flex;flex-direction:column}
+#login{align-items:center;justify-content:center;padding:24px;background:#020208}
+#app{display:none}
+
+/* Grid background */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    linear-gradient(0deg,transparent 24%,var(--grid) 25%,var(--grid) 26%,transparent 27%,transparent 74%,var(--grid) 75%,var(--grid) 76%,transparent 77%,transparent),
+    linear-gradient(90deg,transparent 24%,var(--grid) 25%,var(--grid) 26%,transparent 27%,transparent 74%,var(--grid) 75%,var(--grid) 76%,transparent 77%,transparent);
+  background-size:50px 50px;
+  z-index:0;pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 30% 0%,rgba(0,255,180,.04) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 100%,rgba(0,229,255,.03) 0%,transparent 60%);
+  z-index:0;pointer-events:none;
+}
+#app>*,#login>*{position:relative;z-index:1}
+
+/* Scanline effect */
+.scanlines{position:fixed;inset:0;z-index:50;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.04) 0,rgba(0,0,0,.04) 1px,transparent 1px,transparent 3px);
+  opacity:.5;mix-blend-mode:multiply;
+}
+
+/* === LOGIN === */
+.lcard{
+  width:100%;max-width:380px;padding:28px 22px;
+  background:var(--panel2);
+  border:1px solid var(--neon);
+  box-shadow:0 0 30px rgba(0,255,180,.2),inset 0 0 30px rgba(0,255,180,.04);
+  clip-path:polygon(0 12px,12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px));
+}
+.lhead{text-align:center;margin-bottom:24px}
+.lcorner{
+  display:flex;justify-content:space-between;
+  font-size:10px;color:var(--neon);font-family:'JetBrains Mono',monospace;
+  margin-bottom:14px;letter-spacing:1px;font-weight:700;
+  text-shadow:0 0 6px var(--neon);
+}
+.llogo{
+  width:60px;height:60px;
+  background:transparent;
+  border:1.5px solid var(--neon);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+  color:var(--neon);
+  box-shadow:0 0 20px rgba(0,255,180,.3),inset 0 0 14px rgba(0,255,180,.1);
+}
+.ltitle{
+  font-size:24px;font-weight:900;letter-spacing:2px;
+  font-family:'Orbitron','Tajawal',sans-serif;
+  color:var(--neon);
+  text-shadow:0 0 10px var(--neon),0 0 30px rgba(0,255,180,.5);
+  text-transform:uppercase;
+}
+.lsub{font-size:11px;color:var(--tx2);margin-top:6px;letter-spacing:2px;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0 22px}
+.pdot{width:14px;height:14px;background:transparent;border:1.5px solid var(--neon);transition:all .25s}
+.pdot.on{background:var(--neon);box-shadow:0 0 12px var(--neon)}
+.pdot.err{border-color:var(--red);background:var(--red);box-shadow:0 0 12px var(--red);animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;direction:ltr}
+.pkey{
+  height:54px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  font-size:22px;font-weight:700;color:var(--neon);
+  cursor:pointer;transition:all .12s;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0;
+}
+.pkey:active{background:var(--neon);color:#000;box-shadow:0 0 18px var(--neon)}
+.pkey.gh{font-size:11px;font-weight:900;color:var(--tx2);letter-spacing:1px}
+.pkey.del{font-size:18px}
+.lerr{color:var(--red);font-size:11px;text-align:center;letter-spacing:1.5px;text-transform:uppercase;height:14px;margin:8px 0;font-family:'JetBrains Mono',monospace;text-shadow:0 0 8px var(--red)}
+
+/* === HEADER === */
+.topbar{
+  background:var(--bg2);
+  border-bottom:1px solid var(--tx3);
+  padding:max(12px,calc(8px + env(safe-area-inset-top))) 16px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.tb-l{display:flex;align-items:center;gap:11px}
+.tb-mark{
+  width:38px;height:38px;
+  background:transparent;
+  border:1.5px solid var(--neon);
+  color:var(--neon);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:16px;
+  box-shadow:0 0 14px rgba(0,255,180,.3);
+  font-family:'Orbitron',monospace;
+}
+.tb-name{
+  font-size:15px;font-weight:900;letter-spacing:1.5px;
+  font-family:'Orbitron','Tajawal',sans-serif;
+  color:var(--neon);
+  text-shadow:0 0 8px rgba(0,255,180,.6);
+  text-transform:uppercase;
+}
+.tb-date{font-size:9px;color:var(--tx2);font-family:'JetBrains Mono',monospace;margin-top:1px;letter-spacing:1px;text-transform:uppercase}
+.tb-r{display:flex;gap:6px}
+.iconb{
+  width:36px;height:36px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--neon);
+  transition:all .15s;
+}
+.iconb:active{background:var(--neon);color:#000;box-shadow:0 0 12px var(--neon)}
+.iconb.live::after{content:'';position:absolute;width:5px;height:5px;background:var(--neon);border-radius:50%;top:5px;right:5px;box-shadow:0 0 6px var(--neon);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+
+/* Body */
+.body{flex:1;overflow-y:auto;padding-bottom:130px;-webkit-overflow-scrolling:touch}
+
+/* HUD style stat panel */
+.hud{padding:12px 16px 0}
+.hud-lbl{
+  font-size:9px;color:var(--neon);letter-spacing:2px;
+  font-family:'JetBrains Mono',monospace;font-weight:700;
+  margin-bottom:8px;text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+  text-shadow:0 0 6px var(--neon);
+}
+.hud-lbl::before{content:'▶';color:var(--neon)}
+.hud-lbl-line{flex:1;height:1px;background:linear-gradient(90deg,var(--neon),transparent);opacity:.5}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px}
+.stat{
+  background:var(--panel2);
+  border:1px solid var(--tx3);
+  padding:11px 6px;text-align:center;
+  position:relative;cursor:pointer;
+  transition:all .15s;
+}
+.stat:active{transform:scale(.96)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--neon);opacity:.4}
+.stat .v{font-size:22px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--neon);text-shadow:0 0 8px rgba(0,255,180,.5);line-height:1}
+.stat .l{font-size:9px;color:var(--tx2);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:5px;text-transform:uppercase}
+.stat.act .v{color:var(--neon)}
+.stat.exp .v{color:var(--neon4);text-shadow:0 0 8px rgba(255,215,0,.5)}
+.stat.exp::before{background:var(--neon4)}
+.stat.ded .v{color:var(--red);text-shadow:0 0 8px rgba(255,46,96,.5)}
+.stat.ded::before{background:var(--red)}
+
+/* KPI panels */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.kpi{
+  background:var(--panel2);
+  border:1px solid var(--neon);
+  padding:14px;
+  position:relative;
+  box-shadow:0 0 16px rgba(0,255,180,.1);
+}
+.kpi.red{border-color:var(--red);box-shadow:0 0 16px rgba(255,46,96,.1)}
+.kpi-l{font-size:9px;color:var(--tx2);letter-spacing:1px;font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-bottom:5px}
+.kpi-v{font-size:18px;font-weight:900;color:var(--neon);font-family:'JetBrains Mono',monospace;line-height:1.1;text-shadow:0 0 8px rgba(0,255,180,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.red .kpi-v{color:var(--red);text-shadow:0 0 8px rgba(255,46,96,.5)}
+.kpi-c{font-size:9px;color:var(--tx2);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-top:3px;text-transform:uppercase}
+
+/* Search */
+.controls{padding:0 16px 14px}
+.search-box{
+  background:var(--panel2);
+  border:1px solid var(--tx3);
+  padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;
+}
+.search-box:focus-within{border-color:var(--neon);box-shadow:0 0 14px rgba(0,255,180,.2)}
+.search-box::before{content:'>';color:var(--neon);font-family:'JetBrains Mono',monospace;font-weight:900}
+.search-box input{flex:1;font-size:13px;color:#fff;font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+.search-box input::placeholder{color:var(--tx2);text-transform:uppercase;letter-spacing:1px}
+
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex-shrink:0;padding:7px 14px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  font-size:10px;font-weight:700;color:var(--tx2);
+  font-family:'JetBrains Mono',monospace;letter-spacing:1px;
+  cursor:pointer;white-space:nowrap;
+  transition:all .15s;text-transform:uppercase;
+}
+.chip.on{background:var(--neon);color:#000;border-color:var(--neon);box-shadow:0 0 12px var(--neon)}
+.chip.amb.on{background:var(--neon4);color:#000;border-color:var(--neon4);box-shadow:0 0 12px var(--neon4)}
+.chip.red.on{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 0 12px var(--red)}
+
+/* List */
+.list{padding:0 16px}
+.scard{
+  background:var(--panel2);
+  border:1px solid var(--tx3);
+  padding:12px 14px;
+  margin-bottom:7px;
+  display:flex;align-items:center;gap:11px;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;overflow:hidden;
+}
+.scard:active{transform:scale(.99)}
+.scard::before{content:'';position:absolute;top:0;right:0;bottom:0;width:3px;background:var(--neon);box-shadow:0 0 12px var(--neon);opacity:.7}
+.scard.expiring::before{background:var(--neon4);box-shadow:0 0 12px var(--neon4)}
+.scard.expired::before{background:var(--red);box-shadow:0 0 12px var(--red)}
+.scard.unpaid::before{background:var(--neon3);box-shadow:0 0 12px var(--neon3)}
+.scard:hover,.scard:active{border-color:var(--neon);box-shadow:0 0 18px rgba(0,255,180,.15)}
+.s-av{
+  width:38px;height:38px;
+  background:transparent;
+  border:1.5px solid var(--neon);
+  color:var(--neon);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:14px;flex-shrink:0;
+  font-family:'Orbitron','JetBrains Mono',monospace;
+  text-shadow:0 0 6px rgba(0,255,180,.5);
+}
+.scard.expiring .s-av{border-color:var(--neon4);color:var(--neon4);text-shadow:0 0 6px rgba(255,215,0,.5)}
+.scard.expired .s-av{border-color:var(--red);color:var(--red);text-shadow:0 0 6px rgba(255,46,96,.5)}
+.s-info{flex:1;min-width:0}
+.s-name{font-size:13px;font-weight:900;color:#fff;letter-spacing:.3px}
+.s-user{font-size:10px;color:var(--neon2);font-family:'JetBrains Mono',monospace;margin-top:2px;letter-spacing:1px;text-shadow:0 0 4px rgba(0,229,255,.3)}
+.s-meta{display:flex;align-items:center;gap:7px;margin-top:4px;font-size:10px;font-family:'JetBrains Mono',monospace}
+.s-pkg{color:var(--neon4);font-weight:700;letter-spacing:.5px}
+.s-dot{width:2px;height:2px;background:var(--tx3)}
+.s-days{color:var(--tx2);font-weight:700}
+.s-badge{
+  padding:5px 10px;
+  font-size:9px;font-weight:900;
+  background:transparent;
+  border:1px solid var(--neon);
+  color:var(--neon);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:1.5px;text-transform:uppercase;
+  flex-shrink:0;
+  text-shadow:0 0 4px rgba(0,255,180,.5);
+}
+.scard.expiring .s-badge{border-color:var(--neon4);color:var(--neon4);text-shadow:0 0 4px rgba(255,215,0,.5)}
+.scard.expired .s-badge{border-color:var(--red);color:var(--red);text-shadow:0 0 4px rgba(255,46,96,.5)}
+.scard.unpaid .s-badge{border-color:var(--neon3);color:var(--neon3);text-shadow:0 0 4px rgba(255,16,170,.5)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--tx2)}
+.empty-ico{font-size:50px;margin-bottom:14px;opacity:.4;font-family:monospace}
+
+/* Bottom Nav - Terminal style */
+.bnav{
+  position:fixed;left:0;right:0;
+  bottom:0;
+  background:var(--bg2);
+  border-top:1px solid var(--neon);
+  padding:8px 12px max(8px,calc(8px + env(safe-area-inset-bottom)));
+  display:flex;gap:4px;align-items:center;
+  z-index:10;
+  box-shadow:0 -8px 24px rgba(0,255,180,.1);
+}
+.bnav-item{
+  flex:1;height:50px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;color:var(--tx2);cursor:pointer;
+  font-size:9px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:1px;text-transform:uppercase;
+  transition:all .15s;
+}
+.bnav-item.on{background:transparent;border-color:var(--neon);color:var(--neon);box-shadow:0 0 14px rgba(0,255,180,.2)}
+.bnav-item svg{width:18px;height:18px}
+.bnav-add{
+  flex:0 0 auto;width:54px;height:54px;
+  background:var(--neon);
+  color:#000;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--neon);
+  box-shadow:0 0 24px var(--neon);
+  transition:all .15s;
+  margin:0 4px;
+}
+.bnav-add:active{background:#000;color:var(--neon);box-shadow:0 0 30px var(--neon),inset 0 0 18px rgba(0,255,180,.2)}
+.bnav-add svg{width:24px;height:24px}
+
+/* === SHEETS === */
+.ov{
+  position:fixed;inset:0;z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(6px);
+}
+.ov.show{display:flex;animation:ovIn .25s ease}
+.ov.ctr{align-items:center;padding:20px}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:480px;max-height:92vh;
+  background:var(--bg2);
+  border:1px solid var(--neon);
+  border-bottom:none;
+  display:flex;flex-direction:column;
+  animation:shIn .35s cubic-bezier(.32,.72,0,1);
+  padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -10px 40px rgba(0,255,180,.15);
+}
+.ov.ctr .sheet{
+  border-bottom:1px solid var(--neon);
+  max-width:400px;
+  animation:scIn .35s cubic-bezier(.32,.72,0,1);
+}
+@keyframes shIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.sh-handle{padding:7px 0 0;display:flex;justify-content:center;flex-shrink:0}
+.sh-bar{width:50px;height:3px;background:var(--neon);box-shadow:0 0 8px var(--neon)}
+.sh-title{
+  padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;border-bottom:1px solid var(--tx3);
+}
+.sh-title .t{
+  font-size:14px;font-weight:900;letter-spacing:2px;
+  font-family:'Orbitron','Tajawal',sans-serif;
+  color:var(--neon);
+  text-transform:uppercase;
+  text-shadow:0 0 6px var(--neon);
+}
+.sh-close{
+  width:32px;height:32px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--neon);font-size:14px;
+}
+.sh-body{flex:1;overflow-y:auto;padding:16px 18px}
+.sh-foot{padding:12px 18px max(16px,env(safe-area-inset-bottom));display:flex;gap:8px;flex-shrink:0;border-top:1px solid var(--tx3)}
+
+.fg{margin-bottom:14px}
+.fl{
+  display:block;font-size:9px;color:var(--neon);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:2px;font-weight:700;
+  margin-bottom:6px;text-transform:uppercase;
+}
+.fl::before{content:'> '}
+.fi{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--tx3);
+  padding:12px 14px;color:#fff;
+  font-size:14px;font-family:'JetBrains Mono',monospace;
+  transition:all .15s;letter-spacing:.5px;
+}
+.fi:focus{border-color:var(--neon);box-shadow:0 0 14px rgba(0,255,180,.2)}
+.fi::placeholder{color:var(--tx2);font-family:inherit}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn{
+  flex:1;padding:13px;
+  font-size:11px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:2px;text-transform:uppercase;
+  transition:all .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn.bp{background:var(--neon);color:#000;border:1px solid var(--neon);box-shadow:0 0 18px rgba(0,255,180,.4)}
+.btn.bp:active{box-shadow:0 0 28px var(--neon)}
+.btn.bg{background:var(--bg3);color:var(--tx);border:1px solid var(--tx3)}
+.btn.bd{background:transparent;color:var(--red);border:1px solid var(--red);flex:0 0 auto;padding:13px}
+.btn.bd:active{background:var(--red);color:#000;box-shadow:0 0 18px var(--red)}
+
+.pkg-row{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto}
+.pkg{
+  padding:6px 10px;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  font-size:11px;font-weight:700;color:var(--tx2);
+  font-family:'JetBrains Mono',monospace;cursor:pointer;
+  letter-spacing:1px;
+}
+.pkg.on{background:var(--neon);color:#000;border-color:var(--neon);box-shadow:0 0 10px var(--neon)}
+
+.ptog{display:flex;gap:6px}
+.pt{flex:1;padding:11px;font-size:11px;font-weight:900;cursor:pointer;background:var(--bg3);color:var(--tx2);border:1px solid var(--tx3);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;text-transform:uppercase}
+.pt.paid.on{background:var(--neon);color:#000;border-color:var(--neon);box-shadow:0 0 12px var(--neon)}
+.pt.unpaid.on{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 0 12px var(--red)}
+
+/* Toast */
+.toasts{position:fixed;top:max(20px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:90%;max-width:380px}
+.toast{
+  background:var(--bg2);
+  border:1px solid var(--neon);
+  padding:11px 14px;
+  font-size:11px;font-weight:900;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--neon);
+  box-shadow:0 0 18px rgba(0,255,180,.2);
+  animation:toastIn .3s;
+  text-shadow:0 0 6px var(--neon);
+}
+.toast.s{border-color:var(--neon);color:var(--neon)}
+.toast.e{border-color:var(--red);color:var(--red);text-shadow:0 0 6px var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+
+/* Settings */
+.setrow{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;border-bottom:1px solid var(--tx3);gap:12px;
+}
+.setrow:last-child{border-bottom:none}
+.setk{font-size:11px;color:var(--tx2);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;font-weight:700}
+.setv{font-size:13px;color:var(--neon);font-weight:900;font-family:'JetBrains Mono',monospace;text-shadow:0 0 4px rgba(0,255,180,.4)}
+
+/* Profile */
+.prof-h{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:8px 0;border-bottom:1px solid var(--tx3);padding-bottom:14px}
+.prof-av{width:60px;height:60px;background:transparent;border:1.5px solid var(--neon);color:var(--neon);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;flex-shrink:0;text-shadow:0 0 8px rgba(0,255,180,.5);font-family:'Orbitron',monospace;box-shadow:0 0 18px rgba(0,255,180,.2)}
+.prof-info{flex:1;min-width:0}
+.prof-name{font-size:18px;font-weight:900;color:#fff;letter-spacing:.5px}
+.prof-user{font-size:11px;color:var(--neon2);font-family:'JetBrains Mono',monospace;margin-top:2px;letter-spacing:1.5px;text-shadow:0 0 6px rgba(0,229,255,.4)}
+.prof-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:11px 0;border-bottom:1px solid var(--tx3);
+  gap:12px;
+}
+.prof-row:last-child{border:none}
+.prof-k{font-size:11px;color:var(--tx2);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:6px}
+.prof-v{font-size:13px;font-weight:900;font-family:'JetBrains Mono',monospace;color:#fff;letter-spacing:.5px}
+.prof-v.g{color:var(--neon);text-shadow:0 0 4px rgba(0,255,180,.4)}
+.prof-v.a{color:var(--neon4);text-shadow:0 0 4px rgba(255,215,0,.4)}
+.prof-v.r{color:var(--red);text-shadow:0 0 4px rgba(255,46,96,.4)}
+
+.acts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px}
+.act{
+  aspect-ratio:1;
+  background:var(--bg3);
+  border:1px solid var(--tx3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;color:var(--tx2);
+  font-size:9px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.act svg{width:18px;height:18px}
+.act:active{background:var(--neon);color:#000;border-color:var(--neon)}
+.act.wa{background:transparent;border-color:#25d366;color:#25d366}
+.act.wa:active{background:#25d366;color:#000;box-shadow:0 0 14px rgba(37,211,102,.4)}
+.act.r{background:transparent;border-color:var(--red);color:var(--red)}
+.act.r:active{background:var(--red);color:#000;box-shadow:0 0 14px var(--red)}
+.act.b{background:transparent;border-color:var(--neon2);color:var(--neon2)}
+.act.b:active{background:var(--neon2);color:#000;box-shadow:0 0 14px var(--neon2)}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lcard">
+    <div class="lcorner">
+      <span>// SECURE_LOGIN</span>
+      <span id="sys-time">--:--</span>
+    </div>
+    <div class="lhead">
+      <div class="llogo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div class="ltitle" id="login-title">RAND ATM</div>
+      <div class="lsub">// ENTER PIN</div>
+    </div>
+    <div class="pin-dots">
+      <div class="pdot" id="pd0"></div>
+      <div class="pdot" id="pd1"></div>
+      <div class="pdot" id="pd2"></div>
+      <div class="pdot" id="pd3"></div>
+    </div>
+    <div class="lerr" id="lerr"></div>
+    <div class="pin-grid">
+      <button class="pkey" onclick="pin(1)">1</button>
+      <button class="pkey" onclick="pin(2)">2</button>
+      <button class="pkey" onclick="pin(3)">3</button>
+      <button class="pkey" onclick="pin(4)">4</button>
+      <button class="pkey" onclick="pin(5)">5</button>
+      <button class="pkey" onclick="pin(6)">6</button>
+      <button class="pkey" onclick="pin(7)">7</button>
+      <button class="pkey" onclick="pin(8)">8</button>
+      <button class="pkey" onclick="pin(9)">9</button>
+      <button class="pkey gh" onclick="pinClear()">CLR</button>
+      <button class="pkey" onclick="pin(0)">0</button>
+      <button class="pkey del" onclick="pinDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-mark">R</div>
+      <div>
+        <div class="tb-name" id="biz-name">RAND ATM</div>
+        <div class="tb-date"><span id="hdate">--</span> · ONLINE</div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <button class="iconb live" onclick="loadAll()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="iconb" onclick="openSettings()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="hud">
+      <div class="hud-lbl">SYSTEM STATUS<div class="hud-lbl-line"></div></div>
+      <div class="stats-grid">
+        <div class="stat" onclick="setQF('all')"><div class="v" id="st-tot">0</div><div class="l">TOTAL</div></div>
+        <div class="stat act" onclick="setQF('active')"><div class="v" id="st-act">0</div><div class="l">ACTIVE</div></div>
+        <div class="stat exp" onclick="setQF('expiring')"><div class="v" id="st-exp">0</div><div class="l">CLOSE</div></div>
+        <div class="stat ded" onclick="setQF('expired')"><div class="v" id="st-ded">0</div><div class="l">DEAD</div></div>
+      </div>
+
+      <div class="hud-lbl">FINANCIAL HUD<div class="hud-lbl-line"></div></div>
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-l">// MONTHLY_INCOME</div>
+          <div class="kpi-v" id="kpi-inc">0</div>
+          <div class="kpi-c">_IQD</div>
+        </div>
+        <div class="kpi red">
+          <div class="kpi-l">// PENDING_DEBT</div>
+          <div class="kpi-v" id="kpi-debt">0</div>
+          <div class="kpi-c">_IQD</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="hud-lbl">SUBSCRIBERS LIST<div class="hud-lbl-line"></div></div>
+      <div class="search-box">
+        <input id="search" placeholder="SEARCH..." oninput="renderList()">
+      </div>
+      <div class="chips" id="chips">
+        <div class="chip on" data-f="all" onclick="setF(this)">ALL</div>
+        <div class="chip" data-f="active" onclick="setF(this)">[ ✓ ] ACTIVE</div>
+        <div class="chip amb" data-f="expiring" onclick="setF(this)">[ ! ] CLOSE</div>
+        <div class="chip red" data-f="expired" onclick="setF(this)">[ X ] DEAD</div>
+        <div class="chip red" data-f="unpaid" onclick="setF(this)">[ $ ] DEBT</div>
+      </div>
+    </div>
+
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bnav">
+    <div class="bnav-item on" onclick="setQF('all')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <span>ALL</span>
+    </div>
+    <div class="bnav-item" onclick="setQF('unpaid')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>DEBT</span>
+    </div>
+    <div class="bnav-add" onclick="openAdd()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+    <div class="bnav-item" onclick="setQF('expiring')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>CLOSE</span>
+    </div>
+    <div class="bnav-item" onclick="openSettings()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>SYS</span>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT -->
+<div class="ov" id="ov-form">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <span class="t" id="form-title">[ NEW_USER ]</span>
+      <div class="sh-close" onclick="closeOv('ov-form')">✕</div>
+    </div>
+    <div class="sh-body">
+      <div class="f2">
+        <div class="fg"><label class="fl">NAME *</label><input class="fi" id="f-name" placeholder="full name"></div>
+        <div class="fg"><label class="fl">PHONE</label><input class="fi" id="f-phone" type="tel" placeholder="07xxxxxxxx"></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label class="fl">USER *</label><input class="fi" id="f-user" placeholder="username"></div>
+        <div class="fg"><label class="fl">PRICE *</label><input class="fi" id="f-price" type="number" placeholder="35000"></div>
+      </div>
+      <div class="fg"><label class="fl">PASSWORD</label><input class="fi" id="f-pw" placeholder="optional"></div>
+      <div class="fg"><label class="fl">PACKAGES</label><div class="pkg-row" id="pkg-row"></div></div>
+      <div class="f2">
+        <div class="fg"><label class="fl">START *</label><input class="fi" id="f-start" type="date"></div>
+        <div class="fg"><label class="fl">END</label><input class="fi" id="f-end" type="date" readonly style="opacity:.6"></div>
+      </div>
+      <div class="fg"><label class="fl">NOTES</label><input class="fi" id="f-notes" placeholder="optional"></div>
+      <div class="fg">
+        <label class="fl">PAYMENT_STATUS</label>
+        <div class="ptog">
+          <button class="pt paid on" id="pt-p" onclick="setPay('paid')">[ PAID ]</button>
+          <button class="pt unpaid" id="pt-u" onclick="setPay('unpaid')">[ DEBT ]</button>
+        </div>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-form')">CANCEL</button>
+      <button class="btn bd" id="del-btn" onclick="delSub()" style="display:none">DEL</button>
+      <button class="btn bp" onclick="saveSub()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="ov" id="ov-profile">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <span class="t">[ USER_PROFILE ]</span>
+      <div class="sh-close" onclick="closeOv('ov-profile')">✕</div>
+    </div>
+    <div class="sh-body">
+      <div class="prof-h">
+        <div class="prof-av" id="prof-av">?</div>
+        <div class="prof-info">
+          <div class="prof-name" id="prof-name">—</div>
+          <div class="prof-user" id="prof-user">—</div>
+        </div>
+      </div>
+      <div class="acts-row">
+        <div class="act wa" onclick="profWA()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.571l5.88-1.539A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg><span>MSG</span></div>
+        <div class="act b" onclick="profRenew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span>RENEW</span></div>
+        <div class="act" onclick="profEdit()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>EDIT</span></div>
+        <div class="act r" onclick="profDel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>DEL</span></div>
+      </div>
+      <div id="prof-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="ov" id="ov-set">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <span class="t">[ SYSTEM_CONFIG ]</span>
+      <div class="sh-close" onclick="closeOv('ov-set')">✕</div>
+    </div>
+    <div class="sh-body">
+      <div class="fg"><label class="fl">APP_NAME</label><input class="fi" id="set-biz" oninput="setting('bizName',this.value);applyName()"></div>
+      <div class="fg"><label class="fl">PROVIDER_PHONE</label><input class="fi" id="set-phone" type="tel" placeholder="07xxxxxxxx" onchange="setting('adminPhone',this.value)"></div>
+      <div class="fg">
+        <label class="fl">ALERT_BEFORE_EXPIRY</label>
+        <select class="fi" id="set-alert" onchange="setting('alertDays',+this.value);_alertDays=+this.value;renderList();updateStats()">
+          <option value="3">3 DAYS</option>
+          <option value="5" selected>5 DAYS</option>
+          <option value="7">7 DAYS</option>
+          <option value="10">10 DAYS</option>
+        </select>
+      </div>
+
+      <div class="setrow"><span class="setk">TOTAL_USERS</span><span class="setv" id="set-tot">0</span></div>
+      <div class="setrow"><span class="setk">MONTHLY_REVENUE</span><span class="setv" id="set-inc">0</span></div>
+      <div class="setrow"><span class="setk">PENDING_DEBT</span><span class="setv" id="set-debt">0</span></div>
+
+      <div class="fg" style="margin-top:18px">
+        <label class="fl">PRICE_PACKAGES</label>
+        <div id="set-pkgs" class="pkg-row" style="max-height:none;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="new-pkg" type="number" placeholder="ADD_PRICE" style="flex:1">
+          <button class="btn bp" style="flex:0 0 auto;padding:11px 14px" onclick="addPkg()">+ ADD</button>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:14px">
+        <label class="fl">FULL_APP</label>
+        <a href="../app/index.html" class="btn bg" style="text-decoration:none;display:flex">⮞ ORIGINAL_APP</a>
+      </div>
+      <div class="fg">
+        <button class="btn bg" onclick="changePIN()">CHANGE_PIN</button>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-set')">CLOSE</button>
+      <button class="btn bd" onclick="logout()" style="flex:1">LOGOUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENEW -->
+<div class="ov ctr" id="ov-renew">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title"><span class="t">[ RENEW_SUBSCRIPTION ]</span></div>
+    <div class="sh-body" id="renew-body"></div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-renew')">CANCEL</button>
+      <button class="btn bp" onclick="doRenew()">CONFIRM</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const SB_URL='https://szljofrljstejsrmjzrs.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6bGpvZnJsanN0ZWpzcm1qenJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg5MjcsImV4cCI6MjA4OTYwNDkyN30.hotokJW4BXZwJYRm04-T2_rDTnKi32QGijE5dovqAtw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let _subs=[],_pkgs=[30000,35000,40000,45000,50000,55000,60000,65000,80000,100000,120000];
+let _cfg={bizName:'RAND ATM',adminPhone:'',alertDays:5};
+let _alertDays=5,_filter='all',_curEdit=null,_curView=null,_payChoice='paid';
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n||0).toLocaleString('en-US');
+const pd=d=>{if(!d)return null;const[y,m,dy]=d.split('-').map(Number);const dt=new Date(y,m-1,dy);dt.setHours(0,0,0,0);return dt;};
+const fd=d=>{if(!d)return'—';return pd(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+const dl=s=>Math.ceil((pd(s.end_date)-today())/864e5);
+const status=s=>{
+  const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;
+  if(!isPaid)return'unpaid';
+  const d=dl(s);
+  if(d<0)return'expired';
+  if(d<=_alertDays)return'expiring';
+  return'active';
+};
+const toast=(m,t='s')=>{
+  const el=document.createElement('div');
+  el.className='toast '+t;
+  el.textContent=(t==='e'?'>> ERR: ':'>> OK: ')+m;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+};
+const fmtToday=()=>new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+const esc=s=>(s||'').toString().replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+
+const PIN_KEY='rand_pin_v1';
+const getPin=()=>localStorage.getItem(PIN_KEY)||'8787';
+let _pin='';
+function pin(n){if(_pin.length>=4)return;_pin+=n;updateDots();if(_pin.length===4)setTimeout(checkPin,180)}
+function pinDel(){_pin=_pin.slice(0,-1);updateDots()}
+function pinClear(){_pin='';updateDots()}
+function updateDots(){for(let i=0;i<4;i++)$('pd'+i).className='pdot'+(i<_pin.length?' on':'')}
+function checkPin(){
+  if(_pin===getPin()){
+    sessionStorage.setItem('lg','1');
+    $('login').style.display='none';
+    $('app').style.display='flex';
+    initApp();
+  }else{
+    $('lerr').textContent='// ACCESS DENIED';
+    [0,1,2,3].forEach(i=>$('pd'+i).classList.add('err'));
+    setTimeout(()=>{_pin='';[0,1,2,3].forEach(i=>$('pd'+i).className='pdot');$('lerr').textContent=''},700);
+  }
+}
+function changePIN(){
+  const np=prompt('NEW_PIN (4 digits):');
+  if(!np||!/^\d{4}$/.test(np))return toast('INVALID','e');
+  const c=prompt('CONFIRM:');if(c!==np)return toast('NOT_MATCH','e');
+  localStorage.setItem(PIN_KEY,np);toast('PIN_UPDATED');
+}
+function logout(){sessionStorage.removeItem('lg');location.reload()}
+
+// Live clock
+function updateClock(){
+  const d=new Date();
+  const t=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  if($('sys-time'))$('sys-time').textContent=t;
+}
+setInterval(updateClock,1000);updateClock();
+
+async function loadAll(){
+  await Promise.all([loadSubs(),loadCfg(),loadPkgs()]);
+  applyName();renderList();updateStats();
+}
+async function loadSubs(){
+  const{data,error}=await sb.from('subscribers').select('*').order('name');
+  if(error){console.error(error);return toast('LOAD_FAIL','e');}
+  _subs=data||[];
+}
+async function loadCfg(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','settings').maybeSingle();
+  if(data?.value)_cfg={..._cfg,...data.value};
+  _alertDays=+_cfg.alertDays||5;
+  $('set-biz').value=_cfg.bizName||'';
+  $('set-phone').value=_cfg.adminPhone||'';
+  $('set-alert').value=_alertDays;
+}
+async function loadPkgs(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','packages').maybeSingle();
+  if(data?.value&&Array.isArray(data.value))_pkgs=data.value;
+  renderPkgs();renderSetPkgs();
+}
+async function setting(k,v){_cfg[k]=v;await sb.from('app_settings').upsert({key:'settings',value:_cfg,updated_at:new Date().toISOString()})}
+async function savePkgs(){await sb.from('app_settings').upsert({key:'packages',value:_pkgs,updated_at:new Date().toISOString()})}
+
+function applyName(){
+  const n=(_cfg.bizName||'RAND ATM').toUpperCase();
+  $('biz-name').textContent=n;
+  $('login-title').textContent=n;
+  document.title=n+' — Cyberpunk';
+}
+function setF(el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  _filter=el.dataset.f;renderList();
+}
+function setQF(f){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f));
+  _filter=f;renderList();
+}
+function renderList(){
+  const q=$('search').value.trim().toLowerCase();
+  let arr=[..._subs];
+  if(q)arr=arr.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.username||'').toLowerCase().includes(q)||(s.phone||'').includes(q));
+  if(_filter!=='all')arr=arr.filter(s=>status(s)===_filter);
+  arr.sort((a,b)=>{
+    const sa=status(a),sb_=status(b);
+    const ord={unpaid:0,expired:1,expiring:2,active:3};
+    if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];
+    return dl(a)-dl(b);
+  });
+  const list=$('list');
+  if(!arr.length){list.innerHTML='<div class="empty"><div class="empty-ico">[ NO_DATA ]</div></div>';return;}
+  list.innerHTML=arr.map(s=>{
+    const st=status(s),d=dl(s);
+    const lbl={active:'ACTIVE',expiring:'CLOSE',expired:'DEAD',unpaid:'DEBT'}[st];
+    const dlbl=d<0?`-${Math.abs(d)}D`:`${d}D LEFT`;
+    return `<div class="scard ${st}" onclick="openProfile('${s.id}')">
+      <div class="s-av">${(s.name||'?')[0].toUpperCase()}</div>
+      <div class="s-info">
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-user">@${esc(s.username||'').toUpperCase()}</div>
+        <div class="s-meta">
+          <span class="s-pkg">${fmt(s.price)}_IQD</span>
+          <span class="s-dot"></span>
+          <span class="s-days">${dlbl}</span>
+        </div>
+      </div>
+      <div class="s-badge">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+function updateStats(){
+  let act=0,exp=0,ded=0,inc=0,debt=0;
+  _subs.forEach(s=>{
+    const st=status(s);
+    if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;
+    if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
+  });
+  $('st-tot').textContent=_subs.length;$('st-act').textContent=act;
+  $('st-exp').textContent=exp;$('st-ded').textContent=ded;
+  $('kpi-inc').textContent=fmt(inc);
+  $('kpi-debt').textContent=fmt(debt);
+  $('set-tot').textContent=_subs.length;
+  $('set-inc').textContent=fmt(inc)+' IQD';
+  $('set-debt').textContent=fmt(debt)+' IQD';
+}
+function renderPkgs(){$('pkg-row').innerHTML=_pkgs.map(p=>`<div class="pkg" onclick="pickPkg(${p},this)">${fmt(p)}</div>`).join('')}
+function pickPkg(p,el){
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');$('f-price').value=p;
+}
+function renderSetPkgs(){$('set-pkgs').innerHTML=_pkgs.map((p,i)=>`<div class="pkg on" onclick="rmPkg(${i})">${fmt(p)} ✕</div>`).join('')}
+async function addPkg(){
+  const v=+$('new-pkg').value;
+  if(!v||v<1000)return toast('INVALID','e');
+  if(_pkgs.includes(v))return toast('EXISTS','e');
+  _pkgs.push(v);_pkgs.sort((a,b)=>a-b);
+  await savePkgs();$('new-pkg').value='';renderPkgs();renderSetPkgs();toast('ADDED');
+}
+async function rmPkg(i){
+  if(!confirm('DELETE?'))return;
+  _pkgs.splice(i,1);await savePkgs();renderPkgs();renderSetPkgs();toast('REMOVED');
+}
+
+function openAdd(){
+  _curEdit=null;
+  $('form-title').textContent='[ NEW_USER ]';
+  $('del-btn').style.display='none';
+  ['f-name','f-phone','f-user','f-price','f-pw','f-notes'].forEach(i=>$(i).value='');
+  const t=new Date(),s=t.toISOString().slice(0,10);
+  $('f-start').value=s;
+  const e=new Date(t);e.setDate(e.getDate()+30);
+  $('f-end').value=e.toISOString().slice(0,10);
+  setPay('paid');
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  show('ov-form');
+}
+function openEdit(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curEdit=id;
+  $('form-title').textContent='[ EDIT_USER ]';
+  $('del-btn').style.display='flex';
+  $('f-name').value=s.name||'';$('f-phone').value=s.phone||'';
+  $('f-user').value=s.username||'';$('f-price').value=s.price||'';
+  $('f-pw').value=s.password||'';$('f-start').value=s.start_date||'';
+  $('f-end').value=s.end_date||'';$('f-notes').value=s.note||'';
+  setPay(s.is_paid?'paid':'unpaid');show('ov-form');
+}
+function setPay(p){_payChoice=p;$('pt-p').classList.toggle('on',p==='paid');$('pt-u').classList.toggle('on',p==='unpaid')}
+async function saveSub(){
+  const name=$('f-name').value.trim(),user=$('f-user').value.trim(),price=+$('f-price').value;
+  if(!name)return toast('NAME_REQ','e');
+  if(!user)return toast('USER_REQ','e');
+  if(!price||price<1000)return toast('PRICE_INVALID','e');
+  const s={
+    name,username:user,
+    phone:$('f-phone').value.trim()||null,
+    password:$('f-pw').value.trim()||null,
+    price,
+    start_date:$('f-start').value,end_date:$('f-end').value,
+    note:$('f-notes').value.trim()||null,
+    is_paid:_payChoice==='paid',
+    debt:_payChoice==='paid'?0:price,
+    updated_at:new Date().toISOString()
+  };
+  if(_curEdit){
+    const{error}=await sb.from('subscribers').update(s).eq('id',_curEdit);
+    if(error)return toast('UPDATE_FAIL','e');toast('UPDATED');
+  }else{
+    const{error}=await sb.from('subscribers').insert(s);
+    if(error){console.error(error);return toast('INSERT_FAIL','e');}
+    toast('CREATED');
+  }
+  closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+async function delSub(){
+  if(!_curEdit||!confirm('DELETE PERMANENTLY?'))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curEdit);
+  if(error)return toast('FAIL','e');
+  toast('DELETED');closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='f-start'){
+    const v=e.target.value;
+    if(v){const d=new Date(v);d.setDate(d.getDate()+30);$('f-end').value=d.toISOString().slice(0,10);}
+  }
+});
+
+function openProfile(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curView=id;
+  const st=status(s),d=dl(s);
+  $('prof-av').textContent=(s.name||'?')[0].toUpperCase();
+  $('prof-name').textContent=s.name;
+  $('prof-user').textContent='@'+(s.username||'').toUpperCase();
+  const stLbl={active:'ACTIVE',expiring:'CLOSE_TO_END',expired:'EXPIRED',unpaid:'PAYMENT_DUE'}[st];
+  const dV=d<0?'r':d<=_alertDays?'a':'g';
+  const dT=d<0?`-${Math.abs(d)} DAYS`:`${d} DAYS`;
+  $('prof-body').innerHTML=`
+    <div class="prof-row"><span class="prof-k">// STATUS</span><span class="prof-v ${dV}">${stLbl}</span></div>
+    <div class="prof-row"><span class="prof-k">// PRICE</span><span class="prof-v">${fmt(s.price)} IQD</span></div>
+    <div class="prof-row"><span class="prof-k">// PHONE</span><span class="prof-v">${s.phone||'—'}</span></div>
+    <div class="prof-row"><span class="prof-k">// START</span><span class="prof-v">${fd(s.start_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">// END</span><span class="prof-v ${dV}">${fd(s.end_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">// REMAIN</span><span class="prof-v ${dV}">${dT}</span></div>
+    <div class="prof-row"><span class="prof-k">// PAY</span><span class="prof-v ${s.is_paid?'g':'r'}">${s.is_paid?'PAID ✓':'DEBT ✕'}</span></div>
+    ${s.debt>0?`<div class="prof-row"><span class="prof-k">// DEBT</span><span class="prof-v r">${fmt(s.debt)} IQD</span></div>`:''}
+    ${s.password?`<div class="prof-row"><span class="prof-k">// PWD</span><span class="prof-v">${esc(s.password)}</span></div>`:''}
+    ${s.note?`<div class="prof-row"><span class="prof-k">// NOTE</span><span class="prof-v" style="color:var(--tx2);text-align:left;max-width:60%">${esc(s.note)}</span></div>`:''}
+  `;
+  show('ov-profile');
+}
+function profEdit(){const id=_curView;closeOv('ov-profile');setTimeout(()=>openEdit(id),200)}
+async function profDel(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  if(!confirm(`DELETE "${s.name}"?`))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curView);
+  if(error)return toast('FAIL','e');
+  toast('DELETED');closeOv('ov-profile');await loadSubs();renderList();updateStats();
+}
+function profWA(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const phone=(s.phone||'').replace(/^0/,'');
+  if(!phone)return toast('NO_PHONE','e');
+  const d=dl(s);
+  const msg=encodeURIComponent(`مرحباً ${s.name}\nاشتراكك: @${s.username}\nمتبقي: ${d>0?d+' يوم':'منتهي'}`);
+  window.open(`https://wa.me/964${phone}?text=${msg}`,'_blank');
+}
+function profRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  $('renew-body').innerHTML=`
+    <div style="text-align:center;padding:8px 0 18px;font-family:'JetBrains Mono',monospace;line-height:1.9">
+      <div style="font-size:14px;color:#fff;margin-bottom:10px;letter-spacing:1px">>> ${esc(s.name).toUpperCase()}</div>
+      <div style="font-size:11px;color:var(--tx2);letter-spacing:1px">
+        FROM: <b style="color:var(--neon)">${fd(today)}</b><br>
+        TO: <b style="color:var(--neon4)">${fd(newEnd)}</b><br>
+        AMOUNT: <b style="color:var(--neon)">${fmt(s.price)} IQD</b>
+      </div>
+    </div>
+    <div class="ptog">
+      <button class="pt paid on" id="rn-p" onclick="document.getElementById('rn-p').classList.add('on');document.getElementById('rn-u').classList.remove('on')">[ PAID ]</button>
+      <button class="pt unpaid" id="rn-u" onclick="document.getElementById('rn-u').classList.add('on');document.getElementById('rn-p').classList.remove('on')">[ DEBT ]</button>
+    </div>`;
+  closeOv('ov-profile');setTimeout(()=>show('ov-renew'),250);
+}
+async function doRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const isPaid=$('rn-p').classList.contains('on');
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  const newDebt=isPaid?0:(+(s.debt||0)+ +s.price);
+  const{error}=await sb.from('subscribers').update({
+    start_date:today,end_date:newEnd,
+    is_paid:isPaid,debt:newDebt,updated_at:new Date().toISOString()
+  }).eq('id',s.id);
+  if(error)return toast('FAIL','e');
+  toast('RENEWED');closeOv('ov-renew');await loadSubs();renderList();updateStats();
+}
+
+function openSettings(){show('ov-set')}
+function show(id){$(id).classList.add('show')}
+function closeOv(id){$(id).classList.remove('show')}
+
+async function initApp(){
+  $('hdate').textContent=fmtToday();
+  await loadAll();
+}
+
+if(sessionStorage.getItem('lg')==='1'){
+  $('login').style.display='none';
+  $('app').style.display='flex';
+  initApp();
+}
+document.querySelectorAll('.ov').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show')});
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('../app/sw.js',{scope:'../app/'}).catch(()=>{});}
+</script>
+</body>
+</html>

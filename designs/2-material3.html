@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rand ATM — Material 3 Expressive</title>
+<meta name="theme-color" content="#fff8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="../app/manifest.json">
+<link rel="apple-touch-icon" href="../app/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Roboto+Flex:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  /* M3 Expressive palette */
+  --primary:#6750a4;
+  --on-primary:#fff;
+  --primary-c:#eaddff;
+  --on-primary-c:#21005d;
+  --secondary:#f8b4d0;
+  --tertiary:#ffb84d;
+  --error:#ba1a1a;
+  --error-c:#ffdad6;
+  --success:#198038;
+  --success-c:#a6f0b8;
+  --warn:#bf6c00;
+  --warn-c:#ffe2bf;
+
+  --surface:#fef7ff;
+  --surface-1:#fff8f7;
+  --surface-2:#fef7fb;
+  --surface-3:#f9f0fa;
+  --surface-c:#ffd8e4;
+  --on-surface:#1d1b20;
+  --on-surface-v:#49454f;
+  --outline:#79747e;
+  --outline-v:#cac4d0;
+
+  --r-xs:8px;--r-s:12px;--r-m:16px;--r-l:24px;--r-xl:28px;--r-full:100px;
+}
+html{height:100%;background:var(--surface);overflow:hidden;position:fixed;width:100%;-webkit-text-size-adjust:100%}
+body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:'Tajawal','Roboto Flex',sans-serif;
+  background:var(--surface);
+  color:var(--on-surface);
+  user-select:none;-webkit-user-select:none;
+}
+input,button,select,textarea{font-family:inherit;font-size:16px;-webkit-appearance:none;outline:none;border:none;color:inherit;background:none}
+
+#app,#login{position:fixed;inset:0;display:flex;flex-direction:column}
+#login{align-items:center;justify-content:center;padding:32px;background:linear-gradient(180deg,#fef7ff 0%,#eaddff 100%)}
+#app{display:none}
+
+/* === LOGIN === */
+.lcard{
+  width:100%;max-width:380px;
+  background:var(--surface-1);
+  border-radius:32px;padding:40px 28px 32px;
+  box-shadow:0 4px 16px rgba(103,80,164,.08);
+}
+.lhead{text-align:center;margin-bottom:24px}
+.llogo{
+  width:72px;height:72px;border-radius:24px;
+  background:linear-gradient(135deg,var(--primary),#9168f8);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+  box-shadow:0 8px 24px rgba(103,80,164,.3);
+  color:#fff;
+}
+.ltitle{font-size:24px;font-weight:900;letter-spacing:-.5px;color:var(--on-surface)}
+.lsub{font-size:14px;color:var(--on-surface-v);margin-top:4px}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0 24px}
+.pdot{width:14px;height:14px;border-radius:50%;background:var(--surface-3);border:1.5px solid var(--outline-v);transition:all .25s}
+.pdot.on{background:var(--primary);border-color:var(--primary);transform:scale(1.15)}
+.pdot.err{background:var(--error);border-color:var(--error);animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;direction:ltr}
+.pkey{
+  height:60px;border-radius:24px;
+  background:var(--primary-c);
+  color:var(--on-primary-c);
+  font-size:24px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+  font-family:'Roboto Flex','JetBrains Mono',monospace;
+}
+.pkey:active{background:var(--primary);color:#fff;transform:scale(.95)}
+.pkey.gh{background:var(--surface-3);color:var(--on-surface-v);font-size:13px;font-weight:900;font-family:inherit}
+.pkey.del{font-size:20px}
+.lerr{color:var(--error);font-size:13px;text-align:center;font-weight:700;height:18px;margin:8px 0}
+
+/* === HEADER === */
+.topbar{
+  background:var(--surface-1);
+  padding:max(14px,calc(14px + env(safe-area-inset-top))) 16px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+  border-bottom:1px solid var(--outline-v);
+}
+.tb-l{display:flex;align-items:center;gap:11px}
+.tb-mark{
+  width:42px;height:42px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary),#9168f8);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:900;font-size:17px;
+  box-shadow:0 6px 16px rgba(103,80,164,.25);
+}
+.tb-name{font-size:18px;font-weight:900;letter-spacing:-.3px}
+.tb-date{font-size:11px;color:var(--on-surface-v);font-weight:600;margin-top:1px}
+.tb-r{display:flex;gap:8px}
+.iconb{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--surface-3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--on-surface-v);
+  transition:all .15s;
+}
+.iconb:active{background:var(--primary-c);color:var(--on-primary-c)}
+
+/* Body */
+.body{flex:1;overflow-y:auto;padding-bottom:140px;-webkit-overflow-scrolling:touch}
+
+/* Hero stats — M3 Expressive: large rounded shapes */
+.hero{padding:18px 16px 14px}
+.hero-pill{
+  background:linear-gradient(135deg,var(--primary),#7c5cff);
+  border-radius:32px;
+  padding:18px 22px;
+  margin-bottom:12px;
+  color:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 30px -10px rgba(103,80,164,.4);
+}
+.hero-pill::before{
+  content:'';position:absolute;width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%);
+  top:-80px;right:-50px;
+}
+.hero-pill .lbl{font-size:12px;color:rgba(255,255,255,.8);font-weight:700;margin-bottom:5px;position:relative}
+.hero-pill .val{font-size:30px;font-weight:900;font-family:'Roboto Flex','JetBrains Mono',monospace;letter-spacing:-.8px;line-height:1;position:relative}
+.hero-pill .sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:4px;position:relative}
+.hero-pill .ico{
+  width:60px;height:60px;border-radius:20px;
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;position:relative;
+}
+
+/* Stats grid - 4 expressive shapes */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-pill{
+  border-radius:20px;padding:14px 8px;text-align:center;
+  background:var(--surface-1);
+  cursor:pointer;
+  transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+.stat-pill:active{transform:scale(.94)}
+.stat-pill.on{transform:scale(1.05)}
+.stat-pill .v{font-size:22px;font-weight:900;font-family:'Roboto Flex',monospace;letter-spacing:-.5px;line-height:1}
+.stat-pill .l{font-size:10px;font-weight:700;margin-top:5px}
+.stat-pill.all{background:#1d1b20;color:#fff}
+.stat-pill.act{background:var(--success-c);color:var(--success)}
+.stat-pill.exp{background:var(--warn-c);color:var(--warn)}
+.stat-pill.ded{background:var(--error-c);color:var(--error)}
+
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi-card{
+  background:var(--secondary);
+  border-radius:24px;padding:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.kpi-card.k2{background:var(--tertiary);color:#1d1b20}
+.kpi-ico{
+  width:42px;height:42px;border-radius:14px;
+  background:rgba(255,255,255,.5);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+.kpi-info{flex:1;min-width:0}
+.kpi-l{font-size:10px;font-weight:700;opacity:.7;margin-bottom:2px}
+.kpi-v{font-size:15px;font-weight:900;font-family:'Roboto Flex',monospace;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Search */
+.search-wrap{padding:0 16px 12px}
+.search-box{
+  display:flex;align-items:center;gap:11px;
+  background:var(--surface-3);
+  border-radius:50px;
+  padding:13px 18px;
+}
+.search-box input{flex:1;font-size:14px}
+.search-box input::placeholder{color:var(--on-surface-v)}
+
+/* Filter chips */
+.chips{padding:0 16px 8px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex-shrink:0;padding:8px 16px;border-radius:50px;
+  background:var(--surface-1);
+  border:1.5px solid var(--outline-v);
+  font-size:12px;font-weight:700;color:var(--on-surface-v);
+  cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.chip.on{background:var(--primary-c);border-color:var(--primary);color:var(--on-primary-c)}
+
+/* List header */
+.list-h{
+  padding:8px 20px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--on-surface-v);font-weight:900;
+}
+.cnt-pill{
+  background:var(--primary-c);color:var(--on-primary-c);
+  padding:3px 10px;border-radius:50px;
+  font-family:'Roboto Flex',monospace;font-size:11px;
+}
+
+/* List */
+.list{padding:0 16px 24px}
+.scard{
+  background:var(--surface-1);
+  border-radius:20px;padding:14px;
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;overflow:hidden;
+}
+.scard:active{transform:scale(.98);background:var(--surface-3)}
+.s-av{
+  width:48px;height:48px;border-radius:16px;
+  background:linear-gradient(135deg,var(--primary),#9168f8);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;color:#fff;font-size:18px;flex-shrink:0;
+}
+.scard.expiring .s-av{background:linear-gradient(135deg,var(--warn),#ffa500)}
+.scard.expired .s-av{background:linear-gradient(135deg,var(--error),#ff5e7e)}
+.scard.unpaid .s-av{background:linear-gradient(135deg,var(--error),var(--warn))}
+.s-info{flex:1;min-width:0}
+.s-name{font-size:15px;font-weight:900;letter-spacing:-.2px}
+.s-user{font-size:11px;color:var(--on-surface-v);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.s-meta{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11px}
+.s-pkg{color:var(--primary);font-weight:700;font-family:'JetBrains Mono',monospace}
+.s-dot{width:3px;height:3px;border-radius:50%;background:var(--outline)}
+.s-days{color:var(--on-surface-v);font-weight:700}
+.s-badge{
+  padding:6px 12px;border-radius:50px;
+  font-size:10px;font-weight:900;
+  background:var(--success-c);color:var(--success);
+  flex-shrink:0;
+}
+.scard.expiring .s-badge{background:var(--warn-c);color:var(--warn)}
+.scard.expired .s-badge{background:var(--error-c);color:var(--error)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--on-surface-v)}
+.empty-ico{font-size:50px;margin-bottom:14px;opacity:.5}
+
+/* M3 Bottom App Bar with embedded FAB */
+.bappbar{
+  position:fixed;left:0;right:0;
+  bottom:0;
+  background:var(--surface-1);
+  padding:12px 12px max(12px,calc(12px + env(safe-area-inset-bottom)));
+  display:flex;align-items:center;justify-content:space-between;
+  gap:8px;z-index:10;
+  box-shadow:0 -4px 16px rgba(0,0,0,.04);
+  border-top:1px solid var(--outline-v);
+}
+.bnav-grp{display:flex;gap:4px;flex:1}
+.bnav-btn{
+  flex:1;height:48px;border-radius:50px;
+  display:flex;align-items:center;justify-content:center;
+  gap:5px;color:var(--on-surface-v);cursor:pointer;
+  font-size:11px;font-weight:700;
+  transition:all .2s;
+}
+.bnav-btn.on{background:var(--primary-c);color:var(--on-primary-c)}
+.bnav-btn svg{width:20px;height:20px}
+.fab{
+  width:54px;height:54px;border-radius:18px;
+  background:linear-gradient(135deg,var(--primary),#9168f8);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;
+  box-shadow:0 8px 22px rgba(103,80,164,.4);
+  flex-shrink:0;transition:transform .15s;
+}
+.fab:active{transform:scale(.92) rotate(45deg)}
+.fab svg{width:22px;height:22px}
+
+/* === SHEETS (M3 bottom sheet) === */
+.ov{
+  position:fixed;inset:0;z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.4);
+}
+.ov.show{display:flex;animation:ovIn .25s ease}
+.ov.ctr{align-items:center;padding:20px}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:480px;max-height:92vh;
+  background:var(--surface-1);
+  border-radius:28px 28px 0 0;
+  display:flex;flex-direction:column;
+  animation:shIn .35s cubic-bezier(.32,.72,0,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.ov.ctr .sheet{
+  border-radius:28px;max-width:400px;
+  animation:scIn .35s cubic-bezier(.32,.72,0,1);
+}
+@keyframes shIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.sh-handle{padding:12px 0 4px;display:flex;justify-content:center;flex-shrink:0}
+.sh-bar{width:32px;height:4px;border-radius:2px;background:var(--outline)}
+.sh-title{padding:8px 24px 14px;font-size:22px;font-weight:900;letter-spacing:-.5px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between}
+.sh-close{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--surface-3);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--on-surface-v);font-size:18px;
+}
+.sh-body{flex:1;overflow-y:auto;padding:0 24px 16px}
+.sh-foot{padding:14px 24px max(20px,env(safe-area-inset-bottom));display:flex;gap:10px;flex-shrink:0;border-top:1px solid var(--outline-v)}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;color:var(--on-surface-v);font-weight:700;margin-bottom:7px;padding-right:6px}
+.fi{
+  width:100%;background:var(--surface-3);
+  border:none;border-radius:14px;
+  padding:14px 16px;color:var(--on-surface);font-size:14px;
+  transition:all .15s;
+}
+.fi:focus{background:var(--surface-c);outline:2px solid var(--primary)}
+.fi::placeholder{color:var(--on-surface-v)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn{
+  flex:1;padding:14px 18px;border-radius:50px;
+  font-size:14px;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:all .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn.bp{background:var(--primary);color:#fff;box-shadow:0 4px 14px rgba(103,80,164,.3)}
+.btn.bp:active{box-shadow:0 2px 8px rgba(103,80,164,.2)}
+.btn.bg{background:var(--surface-3);color:var(--on-surface)}
+.btn.bd{background:var(--error-c);color:var(--error);flex:0 0 auto;padding:14px 18px}
+.btn.bs{background:var(--success-c);color:var(--success)}
+
+.pkg-row{display:flex;flex-wrap:wrap;gap:6px;max-height:120px;overflow-y:auto}
+.pkg{
+  padding:8px 14px;border-radius:50px;
+  background:var(--surface-3);
+  border:1.5px solid transparent;
+  font-size:12px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;cursor:pointer;
+  color:var(--on-surface);
+}
+.pkg.on{background:var(--primary-c);border-color:var(--primary);color:var(--on-primary-c)}
+
+.ptog{display:flex;gap:8px}
+.pt{flex:1;padding:12px;border-radius:14px;font-size:13px;font-weight:900;cursor:pointer;background:var(--surface-3);color:var(--on-surface-v);border:2px solid transparent}
+.pt.paid.on{background:var(--success-c);border-color:var(--success);color:var(--success)}
+.pt.unpaid.on{background:var(--error-c);border-color:var(--error);color:var(--error)}
+
+/* Snackbar */
+.toasts{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:380px}
+.toast{
+  background:#322f35;color:#f5eff7;
+  border-radius:8px;padding:14px 18px;
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:700;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  animation:toastIn .3s;
+}
+.toast.s{background:#0e3e1d;color:#a6f0b8}
+.toast.e{background:#410002;color:#ffdad6}
+@keyframes toastIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Settings */
+.setrow{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--outline-v);gap:12px}
+.setrow:last-child{border-bottom:none}
+.setk{font-size:13px;color:var(--on-surface-v);font-weight:700}
+.setv{font-size:14px;font-weight:900;font-family:'JetBrains Mono',monospace;color:var(--primary)}
+
+/* Profile */
+.prof-h{display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:8px 0}
+.prof-av{width:72px;height:72px;border-radius:24px;background:linear-gradient(135deg,var(--primary),#9168f8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:900;flex-shrink:0;box-shadow:0 8px 24px rgba(103,80,164,.3)}
+.prof-info{flex:1;min-width:0}
+.prof-name{font-size:22px;font-weight:900;letter-spacing:-.5px}
+.prof-user{font-size:12px;color:var(--on-surface-v);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.prof-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px 0;border-bottom:1px solid var(--outline-v);
+  gap:12px;
+}
+.prof-row:last-child{border:none}
+.prof-k{font-size:13px;color:var(--on-surface-v);display:flex;align-items:center;gap:8px}
+.prof-v{font-size:14px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.prof-v.g{color:var(--success)}
+.prof-v.a{color:var(--warn)}
+.prof-v.r{color:var(--error)}
+
+.acts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.act{
+  aspect-ratio:1;border-radius:18px;
+  background:var(--surface-3);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;color:var(--on-surface);
+  font-size:10px;font-weight:700;
+  transition:all .15s;
+}
+.act svg{width:22px;height:22px}
+.act:active{transform:scale(.92);background:var(--primary-c)}
+.act.wa{background:#dcedc8;color:#33691e}
+.act.r{background:var(--error-c);color:var(--error)}
+.act.b{background:var(--primary-c);color:var(--on-primary-c)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lcard">
+    <div class="lhead">
+      <div class="llogo">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div class="ltitle" id="login-title">Rand ATM</div>
+      <div class="lsub">أدخل رمز PIN</div>
+    </div>
+    <div class="pin-dots">
+      <div class="pdot" id="pd0"></div>
+      <div class="pdot" id="pd1"></div>
+      <div class="pdot" id="pd2"></div>
+      <div class="pdot" id="pd3"></div>
+    </div>
+    <div class="lerr" id="lerr"></div>
+    <div class="pin-grid">
+      <button class="pkey" onclick="pin(1)">1</button>
+      <button class="pkey" onclick="pin(2)">2</button>
+      <button class="pkey" onclick="pin(3)">3</button>
+      <button class="pkey" onclick="pin(4)">4</button>
+      <button class="pkey" onclick="pin(5)">5</button>
+      <button class="pkey" onclick="pin(6)">6</button>
+      <button class="pkey" onclick="pin(7)">7</button>
+      <button class="pkey" onclick="pin(8)">8</button>
+      <button class="pkey" onclick="pin(9)">9</button>
+      <button class="pkey gh" onclick="pinClear()">CLR</button>
+      <button class="pkey" onclick="pin(0)">0</button>
+      <button class="pkey del" onclick="pinDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-mark">R</div>
+      <div>
+        <div class="tb-name" id="biz-name">Rand ATM</div>
+        <div class="tb-date" id="hdate"></div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <button class="iconb" onclick="loadAll()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="iconb" onclick="openSettings()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="hero">
+      <div class="hero-pill">
+        <div>
+          <div class="lbl">إجمالي المشتركين</div>
+          <div class="val" id="hero-total">0</div>
+          <div class="sub" id="hero-active">0 نشط</div>
+        </div>
+        <div class="ico">👥</div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-pill all" onclick="setQF('all')"><div class="v" id="st-tot">0</div><div class="l">الكل</div></div>
+        <div class="stat-pill act" onclick="setQF('active')"><div class="v" id="st-act">0</div><div class="l">نشط</div></div>
+        <div class="stat-pill exp" onclick="setQF('expiring')"><div class="v" id="st-exp">0</div><div class="l">قارب</div></div>
+        <div class="stat-pill ded" onclick="setQF('expired')"><div class="v" id="st-ded">0</div><div class="l">منتهي</div></div>
+      </div>
+
+      <div class="cards-row">
+        <div class="kpi-card">
+          <div class="kpi-ico">📈</div>
+          <div class="kpi-info">
+            <div class="kpi-l">الدخل الشهري</div>
+            <div class="kpi-v" id="kpi-inc">0 IQD</div>
+          </div>
+        </div>
+        <div class="kpi-card k2">
+          <div class="kpi-ico">💸</div>
+          <div class="kpi-info">
+            <div class="kpi-l">ديون</div>
+            <div class="kpi-v" id="kpi-debt">0 IQD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search" placeholder="ابحث بالاسم أو اليوزر..." oninput="renderList()">
+      </div>
+    </div>
+
+    <div class="chips" id="chips">
+      <div class="chip on" data-f="all" onclick="setF(this)">الكل</div>
+      <div class="chip" data-f="active" onclick="setF(this)">✓ نشط</div>
+      <div class="chip" data-f="expiring" onclick="setF(this)">⚡ قارب</div>
+      <div class="chip" data-f="expired" onclick="setF(this)">✕ منتهي</div>
+      <div class="chip" data-f="unpaid" onclick="setF(this)">💸 ديون</div>
+    </div>
+
+    <div class="list-h">
+      <span>المشتركون</span>
+      <span class="cnt-pill" id="cnt-pill">0</span>
+    </div>
+
+    <div class="list" id="list"></div>
+  </div>
+
+  <!-- M3 Bottom App Bar -->
+  <div class="bappbar">
+    <div class="bnav-grp">
+      <div class="bnav-btn on" data-p="subs" onclick="setQF('all')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <div class="bnav-btn" onclick="setQF('unpaid')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <div class="bnav-btn" onclick="setQF('expiring')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="bnav-btn" onclick="openSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+    </div>
+    <button class="fab" onclick="openAdd()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ADD/EDIT -->
+<div class="ov" id="ov-form">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <span id="form-title">إضافة مشترك</span>
+      <div class="sh-close" onclick="closeOv('ov-form')">✕</div>
+    </div>
+    <div class="sh-body">
+      <div class="f2">
+        <div class="fg"><label class="fl">الاسم *</label><input class="fi" id="f-name" placeholder="أحمد محمد"></div>
+        <div class="fg"><label class="fl">الهاتف</label><input class="fi" id="f-phone" type="tel" placeholder="07xxxxxxxx" style="direction:ltr;text-align:left"></div>
+      </div>
+      <div class="f2">
+        <div class="fg"><label class="fl">المستخدم *</label><input class="fi" id="f-user" placeholder="ahmed_99" style="direction:ltr;text-align:left"></div>
+        <div class="fg"><label class="fl">السعر *</label><input class="fi" id="f-price" type="number" placeholder="35000"></div>
+      </div>
+      <div class="fg"><label class="fl">كلمة المرور</label><input class="fi" id="f-pw" placeholder="اختياري" style="direction:ltr;text-align:left"></div>
+      <div class="fg"><label class="fl">باقات جاهزة</label><div class="pkg-row" id="pkg-row"></div></div>
+      <div class="f2">
+        <div class="fg"><label class="fl">البداية *</label><input class="fi" id="f-start" type="date"></div>
+        <div class="fg"><label class="fl">النهاية</label><input class="fi" id="f-end" type="date" readonly style="opacity:.6"></div>
+      </div>
+      <div class="fg"><label class="fl">ملاحظات</label><input class="fi" id="f-notes" placeholder="اختياري"></div>
+      <div class="fg">
+        <label class="fl">حالة الدفع</label>
+        <div class="ptog">
+          <button class="pt paid on" id="pt-p" onclick="setPay('paid')">✓ مسدد</button>
+          <button class="pt unpaid" id="pt-u" onclick="setPay('unpaid')">✕ غير مسدد</button>
+        </div>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-form')">إلغاء</button>
+      <button class="btn bd" id="del-btn" onclick="delSub()" style="display:none">🗑</button>
+      <button class="btn bp" onclick="saveSub()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="ov" id="ov-profile">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-body" style="padding-top:10px">
+      <div class="prof-h">
+        <div class="prof-av" id="prof-av">؟</div>
+        <div class="prof-info">
+          <div class="prof-name" id="prof-name">—</div>
+          <div class="prof-user" id="prof-user">—</div>
+        </div>
+      </div>
+      <div class="acts-row">
+        <div class="act wa" onclick="profWA()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.571l5.88-1.539A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+          <span>واتساب</span>
+        </div>
+        <div class="act b" onclick="profRenew()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>تجديد</span>
+        </div>
+        <div class="act" onclick="profEdit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>تعديل</span>
+        </div>
+        <div class="act r" onclick="profDel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>حذف</span>
+        </div>
+      </div>
+      <div id="prof-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="ov" id="ov-set">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <span>⚙️ الإعدادات</span>
+      <div class="sh-close" onclick="closeOv('ov-set')">✕</div>
+    </div>
+    <div class="sh-body">
+      <div class="fg"><label class="fl">اسم التطبيق</label><input class="fi" id="set-biz" oninput="setting('bizName',this.value);applyName()"></div>
+      <div class="fg"><label class="fl">رقم الهاتف للتواصل</label><input class="fi" id="set-phone" type="tel" placeholder="07xxxxxxxx" style="direction:ltr;text-align:left" onchange="setting('adminPhone',this.value)"></div>
+      <div class="fg">
+        <label class="fl">تنبيه قبل الانتهاء بـ</label>
+        <select class="fi" id="set-alert" onchange="setting('alertDays',+this.value);_alertDays=+this.value;renderList();updateStats()">
+          <option value="3">3 أيام</option>
+          <option value="5" selected>5 أيام</option>
+          <option value="7">7 أيام</option>
+          <option value="10">10 أيام</option>
+        </select>
+      </div>
+      <div class="setrow"><span class="setk">إجمالي المشتركين</span><span class="setv" id="set-tot">0</span></div>
+      <div class="setrow"><span class="setk">الدخل الشهري</span><span class="setv" id="set-inc">0 IQD</span></div>
+      <div class="setrow"><span class="setk">الديون</span><span class="setv" id="set-debt">0 IQD</span></div>
+
+      <div class="fg" style="margin-top:18px">
+        <label class="fl">الباقات الجاهزة</label>
+        <div id="set-pkgs" class="pkg-row" style="max-height:none;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="fi" id="new-pkg" type="number" placeholder="أضف سعر" style="flex:1">
+          <button class="btn bp" style="flex:0 0 auto;padding:11px 18px" onclick="addPkg()">+</button>
+        </div>
+      </div>
+
+      <div class="fg" style="margin-top:14px">
+        <label class="fl">للتطبيق الكامل (PDF/Telegram/Push)</label>
+        <a href="../app/index.html" class="btn bg" style="text-decoration:none;display:flex">⮞ التطبيق الأصلي</a>
+      </div>
+      <div class="fg">
+        <button class="btn bg" onclick="changePIN()">🔑 تغيير رمز PIN</button>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-set')">إغلاق</button>
+      <button class="btn bd" onclick="logout()" style="flex:1">🚪 خروج</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENEW -->
+<div class="ov ctr" id="ov-renew">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title" style="text-align:center;display:block">⚡ تجديد الاشتراك</div>
+    <div class="sh-body" style="padding-top:0" id="renew-body"></div>
+    <div class="sh-foot">
+      <button class="btn bg" onclick="closeOv('ov-renew')">إلغاء</button>
+      <button class="btn bp" onclick="doRenew()">✓ تجديد</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const SB_URL='https://szljofrljstejsrmjzrs.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6bGpvZnJsanN0ZWpzcm1qenJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg5MjcsImV4cCI6MjA4OTYwNDkyN30.hotokJW4BXZwJYRm04-T2_rDTnKi32QGijE5dovqAtw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let _subs=[],_pkgs=[30000,35000,40000,45000,50000,55000,60000,65000,80000,100000,120000];
+let _cfg={bizName:'Rand ATM',adminPhone:'',alertDays:5};
+let _alertDays=5,_filter='all',_curEdit=null,_curView=null,_payChoice='paid';
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n||0).toLocaleString('en-US');
+const pd=d=>{if(!d)return null;const[y,m,dy]=d.split('-').map(Number);const dt=new Date(y,m-1,dy);dt.setHours(0,0,0,0);return dt;};
+const fd=d=>{if(!d)return'—';return pd(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+const dl=s=>Math.ceil((pd(s.end_date)-today())/864e5);
+const status=s=>{
+  const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;
+  if(!isPaid)return'unpaid';
+  const d=dl(s);
+  if(d<0)return'expired';
+  if(d<=_alertDays)return'expiring';
+  return'active';
+};
+const toast=(m,t='s')=>{
+  const el=document.createElement('div');
+  el.className='toast '+t;
+  el.textContent=(t==='e'?'✕ ':'✓ ')+m;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+};
+const fmtToday=()=>new Date().toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long'});
+const esc=s=>(s||'').toString().replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+
+const PIN_KEY='rand_pin_v1';
+const getPin=()=>localStorage.getItem(PIN_KEY)||'8787';
+let _pin='';
+function pin(n){if(_pin.length>=4)return;_pin+=n;updateDots();if(_pin.length===4)setTimeout(checkPin,180)}
+function pinDel(){_pin=_pin.slice(0,-1);updateDots()}
+function pinClear(){_pin='';updateDots()}
+function updateDots(){for(let i=0;i<4;i++)$('pd'+i).className='pdot'+(i<_pin.length?' on':'')}
+function checkPin(){
+  if(_pin===getPin()){
+    sessionStorage.setItem('lg','1');
+    $('login').style.display='none';
+    $('app').style.display='flex';
+    initApp();
+  }else{
+    $('lerr').textContent='رمز غير صحيح';
+    [0,1,2,3].forEach(i=>$('pd'+i).classList.add('err'));
+    setTimeout(()=>{_pin='';[0,1,2,3].forEach(i=>$('pd'+i).className='pdot');$('lerr').textContent=''},700);
+  }
+}
+function changePIN(){
+  const np=prompt('PIN جديد (4 أرقام):');
+  if(!np||!/^\d{4}$/.test(np))return toast('أدخل 4 أرقام','e');
+  const c=prompt('أعد الإدخال:');
+  if(c!==np)return toast('غير متطابق','e');
+  localStorage.setItem(PIN_KEY,np);toast('تم تغيير الرمز');
+}
+function logout(){sessionStorage.removeItem('lg');location.reload()}
+
+async function loadAll(){
+  await Promise.all([loadSubs(),loadCfg(),loadPkgs()]);
+  applyName();renderList();updateStats();
+}
+async function loadSubs(){
+  const{data,error}=await sb.from('subscribers').select('*').order('name');
+  if(error){console.error(error);return toast('فشل التحميل','e');}
+  _subs=data||[];
+}
+async function loadCfg(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','settings').maybeSingle();
+  if(data?.value)_cfg={..._cfg,...data.value};
+  _alertDays=+_cfg.alertDays||5;
+  $('set-biz').value=_cfg.bizName||'';
+  $('set-phone').value=_cfg.adminPhone||'';
+  $('set-alert').value=_alertDays;
+}
+async function loadPkgs(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','packages').maybeSingle();
+  if(data?.value&&Array.isArray(data.value))_pkgs=data.value;
+  renderPkgs();renderSetPkgs();
+}
+async function setting(k,v){_cfg[k]=v;await sb.from('app_settings').upsert({key:'settings',value:_cfg,updated_at:new Date().toISOString()})}
+async function savePkgs(){await sb.from('app_settings').upsert({key:'packages',value:_pkgs,updated_at:new Date().toISOString()})}
+
+function applyName(){
+  const n=_cfg.bizName||'Rand ATM';
+  $('biz-name').textContent=n;
+  $('login-title').textContent=n;
+  document.title=n+' — Material 3';
+}
+function setF(el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  _filter=el.dataset.f;renderList();
+}
+function setQF(f){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f));
+  _filter=f;renderList();
+  document.querySelectorAll('.stat-pill').forEach(s=>s.classList.remove('on'));
+  const map={all:0,active:1,expiring:2,expired:3};
+  if(f in map)document.querySelectorAll('.stat-pill')[map[f]].classList.add('on');
+  document.querySelector('.body').scrollTo({top:240,behavior:'smooth'});
+}
+function renderList(){
+  const q=$('search').value.trim().toLowerCase();
+  let arr=[..._subs];
+  if(q)arr=arr.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.username||'').toLowerCase().includes(q)||(s.phone||'').includes(q));
+  if(_filter!=='all')arr=arr.filter(s=>status(s)===_filter);
+  arr.sort((a,b)=>{
+    const sa=status(a),sb_=status(b);
+    const ord={unpaid:0,expired:1,expiring:2,active:3};
+    if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];
+    return dl(a)-dl(b);
+  });
+  $('cnt-pill').textContent=arr.length;
+  const list=$('list');
+  if(!arr.length){list.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>لا يوجد مشتركين</div></div>';return;}
+  list.innerHTML=arr.map(s=>{
+    const st=status(s),d=dl(s);
+    const lbl={active:'نشط',expiring:'قارب',expired:'منتهي',unpaid:'دين'}[st];
+    const dlbl=d<0?`منتهي منذ ${Math.abs(d)}ي`:`متبقي ${d}ي`;
+    return `<div class="scard ${st}" onclick="openProfile('${s.id}')">
+      <div class="s-av">${(s.name||'؟')[0]}</div>
+      <div class="s-info">
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-user">@${esc(s.username)}</div>
+        <div class="s-meta">
+          <span class="s-pkg">${fmt(s.price)} IQD</span>
+          <span class="s-dot"></span>
+          <span class="s-days">${dlbl}</span>
+        </div>
+      </div>
+      <div class="s-badge">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+function updateStats(){
+  let act=0,exp=0,ded=0,inc=0,debt=0;
+  _subs.forEach(s=>{
+    const st=status(s);
+    if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;
+    if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
+  });
+  $('st-tot').textContent=_subs.length;$('st-act').textContent=act;
+  $('st-exp').textContent=exp;$('st-ded').textContent=ded;
+  $('hero-total').textContent=_subs.length;
+  $('hero-active').textContent=`${act} نشط · ${exp} قارب · ${ded} منتهي`;
+  $('kpi-inc').textContent=fmt(inc)+' IQD';
+  $('kpi-debt').textContent=fmt(debt)+' IQD';
+  $('set-tot').textContent=_subs.length;
+  $('set-inc').textContent=fmt(inc)+' IQD';
+  $('set-debt').textContent=fmt(debt)+' IQD';
+}
+function renderPkgs(){$('pkg-row').innerHTML=_pkgs.map(p=>`<div class="pkg" onclick="pickPkg(${p},this)">${fmt(p)}</div>`).join('')}
+function pickPkg(p,el){
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');$('f-price').value=p;
+}
+function renderSetPkgs(){$('set-pkgs').innerHTML=_pkgs.map((p,i)=>`<div class="pkg on" onclick="rmPkg(${i})" title="حذف">${fmt(p)} ✕</div>`).join('')}
+async function addPkg(){
+  const v=+$('new-pkg').value;
+  if(!v||v<1000)return toast('سعر غير صحيح','e');
+  if(_pkgs.includes(v))return toast('موجود','e');
+  _pkgs.push(v);_pkgs.sort((a,b)=>a-b);
+  await savePkgs();$('new-pkg').value='';renderPkgs();renderSetPkgs();toast('أضيفت');
+}
+async function rmPkg(i){
+  if(!confirm('حذف؟'))return;
+  _pkgs.splice(i,1);await savePkgs();renderPkgs();renderSetPkgs();toast('حُذفت');
+}
+
+function openAdd(){
+  _curEdit=null;
+  $('form-title').textContent='إضافة مشترك';
+  $('del-btn').style.display='none';
+  ['f-name','f-phone','f-user','f-price','f-pw','f-notes'].forEach(i=>$(i).value='');
+  const t=new Date(),s=t.toISOString().slice(0,10);
+  $('f-start').value=s;
+  const e=new Date(t);e.setDate(e.getDate()+30);
+  $('f-end').value=e.toISOString().slice(0,10);
+  setPay('paid');
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  show('ov-form');
+}
+function openEdit(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curEdit=id;
+  $('form-title').textContent='تعديل';
+  $('del-btn').style.display='flex';
+  $('f-name').value=s.name||'';$('f-phone').value=s.phone||'';
+  $('f-user').value=s.username||'';$('f-price').value=s.price||'';
+  $('f-pw').value=s.password||'';$('f-start').value=s.start_date||'';
+  $('f-end').value=s.end_date||'';$('f-notes').value=s.note||'';
+  setPay(s.is_paid?'paid':'unpaid');show('ov-form');
+}
+function setPay(p){_payChoice=p;$('pt-p').classList.toggle('on',p==='paid');$('pt-u').classList.toggle('on',p==='unpaid')}
+async function saveSub(){
+  const name=$('f-name').value.trim(),user=$('f-user').value.trim(),price=+$('f-price').value;
+  if(!name)return toast('الاسم مطلوب','e');
+  if(!user)return toast('اسم المستخدم مطلوب','e');
+  if(!price||price<1000)return toast('السعر غير صحيح','e');
+  const s={
+    name,username:user,
+    phone:$('f-phone').value.trim()||null,
+    password:$('f-pw').value.trim()||null,
+    price,
+    start_date:$('f-start').value,end_date:$('f-end').value,
+    note:$('f-notes').value.trim()||null,
+    is_paid:_payChoice==='paid',
+    debt:_payChoice==='paid'?0:price,
+    updated_at:new Date().toISOString()
+  };
+  if(_curEdit){
+    const{error}=await sb.from('subscribers').update(s).eq('id',_curEdit);
+    if(error)return toast('فشل الحفظ','e');toast('تم التعديل');
+  }else{
+    const{error}=await sb.from('subscribers').insert(s);
+    if(error){console.error(error);return toast('فشل (يوزر مكرر؟)','e');}
+    toast('أُضيف');
+  }
+  closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+async function delSub(){
+  if(!_curEdit||!confirm('حذف نهائياً؟'))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curEdit);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='f-start'){
+    const v=e.target.value;
+    if(v){const d=new Date(v);d.setDate(d.getDate()+30);$('f-end').value=d.toISOString().slice(0,10);}
+  }
+});
+
+function openProfile(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curView=id;
+  const st=status(s),d=dl(s);
+  $('prof-av').textContent=(s.name||'؟')[0];
+  $('prof-name').textContent=s.name;
+  $('prof-user').textContent='@'+s.username;
+  const stLbl={active:'نشط',expiring:'قارب على الانتهاء',expired:'منتهي',unpaid:'دين'}[st];
+  const dV=d<0?'r':d<=_alertDays?'a':'g';
+  const dT=d<0?`منتهي منذ ${Math.abs(d)} يوم`:`متبقي ${d} يوم`;
+  $('prof-body').innerHTML=`
+    <div class="prof-row"><span class="prof-k">📊 الحالة</span><span class="prof-v ${dV}">${stLbl}</span></div>
+    <div class="prof-row"><span class="prof-k">💰 الباقة</span><span class="prof-v">${fmt(s.price)} IQD</span></div>
+    <div class="prof-row"><span class="prof-k">📞 الهاتف</span><span class="prof-v">${s.phone||'—'}</span></div>
+    <div class="prof-row"><span class="prof-k">📅 البداية</span><span class="prof-v">${fd(s.start_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">⏰ الانتهاء</span><span class="prof-v ${dV}">${fd(s.end_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">⏳ المتبقي</span><span class="prof-v ${dV}">${dT}</span></div>
+    <div class="prof-row"><span class="prof-k">💳 الدفع</span><span class="prof-v ${s.is_paid?'g':'r'}">${s.is_paid?'✓ مسدد':'✕ غير مسدد'}</span></div>
+    ${s.debt>0?`<div class="prof-row"><span class="prof-k">💸 الدين</span><span class="prof-v r">${fmt(s.debt)} IQD</span></div>`:''}
+    ${s.password?`<div class="prof-row"><span class="prof-k">🔑 المرور</span><span class="prof-v">${esc(s.password)}</span></div>`:''}
+    ${s.note?`<div class="prof-row"><span class="prof-k">📝 ملاحظات</span><span class="prof-v" style="font-family:inherit;color:var(--on-surface-v);font-weight:600;text-align:left;max-width:60%">${esc(s.note)}</span></div>`:''}
+  `;
+  show('ov-profile');
+}
+function profEdit(){const id=_curView;closeOv('ov-profile');setTimeout(()=>openEdit(id),200)}
+async function profDel(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  if(!confirm(`حذف "${s.name}"؟`))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curView);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-profile');await loadSubs();renderList();updateStats();
+}
+function profWA(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const phone=(s.phone||'').replace(/^0/,'');
+  if(!phone)return toast('لا يوجد رقم','e');
+  const d=dl(s);
+  const msg=encodeURIComponent(`مرحباً ${s.name}\nاشتراكك: @${s.username}\nمتبقي: ${d>0?d+' يوم':'منتهي'}`);
+  window.open(`https://wa.me/964${phone}?text=${msg}`,'_blank');
+}
+function profRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  $('renew-body').innerHTML=`
+    <div style="text-align:center;padding:6px 0 14px">
+      <div style="font-size:14px;color:var(--on-surface-v);margin-bottom:8px">${esc(s.name)}</div>
+      <div style="font-size:13px;color:var(--on-surface-v);line-height:1.8">
+        تجديد @${esc(s.username)}<br>
+        من <b style="color:var(--on-surface);font-family:monospace">${fd(today)}</b><br>
+        إلى <b style="color:var(--success);font-family:monospace">${fd(newEnd)}</b><br>
+        المبلغ: <b style="color:var(--primary)">${fmt(s.price)} IQD</b>
+      </div>
+    </div>
+    <div class="ptog">
+      <button class="pt paid on" id="rn-p" onclick="document.getElementById('rn-p').classList.add('on');document.getElementById('rn-u').classList.remove('on')">✓ مسدد</button>
+      <button class="pt unpaid" id="rn-u" onclick="document.getElementById('rn-u').classList.add('on');document.getElementById('rn-p').classList.remove('on')">✕ غير مسدد</button>
+    </div>`;
+  closeOv('ov-profile');setTimeout(()=>show('ov-renew'),250);
+}
+async function doRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const isPaid=$('rn-p').classList.contains('on');
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  const newDebt=isPaid?0:(+(s.debt||0)+ +s.price);
+  const{error}=await sb.from('subscribers').update({
+    start_date:today,end_date:newEnd,
+    is_paid:isPaid,debt:newDebt,updated_at:new Date().toISOString()
+  }).eq('id',s.id);
+  if(error)return toast('فشل','e');
+  toast('تم التجديد');closeOv('ov-renew');await loadSubs();renderList();updateStats();
+}
+
+function openSettings(){show('ov-set')}
+function show(id){$(id).classList.add('show')}
+function closeOv(id){$(id).classList.remove('show')}
+
+async function initApp(){
+  $('hdate').textContent=fmtToday();
+  await loadAll();
+}
+
+if(sessionStorage.getItem('lg')==='1'){
+  $('login').style.display='none';
+  $('app').style.display='flex';
+  initApp();
+}
+document.querySelectorAll('.ov').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show')});
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('../app/sw.js',{scope:'../app/'}).catch(()=>{});}
+</script>
+</body>
+</html>

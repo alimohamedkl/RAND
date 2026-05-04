@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>اشتراكي — Rand ATM</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6C47FF">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100%;min-height:100svh;
+  background:#F0F1FF;
+  color:#1A1A2E;
+  font-family:'Tajawal',sans-serif;
+  direction:rtl;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ── Layout ── */
+.app{max-width:430px;margin:0 auto;min-height:100svh;position:relative;overflow-x:hidden;}
+
+/* ── Header Hero ── */
+.hero-header{
+  background:linear-gradient(145deg,#1E0A4C 0%,#3D1A8C 55%,#6C47FF 100%);
+  border-radius:0 0 32px 32px;
+  padding: max(52px, calc(40px + env(safe-area-inset-top))) 22px 36px;
+  position:relative;
+  overflow:hidden;
+}
+.hero-header::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 70% 20%,rgba(108,71,255,.45) 0%,transparent 60%),
+             radial-gradient(ellipse at 10% 80%,rgba(0,212,255,.2) 0%,transparent 50%);
+}
+.hero-top-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;position:relative;}
+.brand-pill{display:flex;align-items:center;gap:9px;}
+.brand-icon{
+  width:38px;height:38px;border-radius:12px;
+  background:rgba(255,255,255,.15);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+}
+.brand-title{font-size:16px;font-weight:900;color:#fff;}
+.refresh-btn{
+  width:38px;height:38px;border-radius:12px;
+  background:rgba(255,255,255,.12);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:18px;
+}
+
+.sub-avatar{
+  width:56px;height:56px;border-radius:18px;
+  background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:900;color:#fff;
+  margin-bottom:14px;
+  position:relative;
+}
+.sub-name-hero{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px;position:relative;}
+.sub-user-hero{font-size:12px;color:rgba(255,255,255,.5);font-family:'JetBrains Mono',monospace;position:relative;}
+
+.status-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 13px;border-radius:20px;
+  font-size:11px;font-weight:700;
+  margin-top:12px;position:relative;
+}
+.status-badge.active{background:rgba(16,185,129,.18);color:#10B981;border:1px solid rgba(16,185,129,.3);}
+.status-badge.expiring{background:rgba(245,158,11,.18);color:#F59E0B;border:1px solid rgba(245,158,11,.3);}
+.status-badge.expired,.status-badge.unpaid{background:rgba(239,68,68,.18);color:#EF4444;border:1px solid rgba(239,68,68,.3);}
+.bdot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+/* Days counter card inside header */
+.days-card{
+  background:rgba(255,255,255,.1);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;
+  padding:18px 20px;
+  margin-top:20px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;
+}
+.days-left{display:flex;flex-direction:column;}
+.days-number{font-size:48px;font-weight:900;color:#fff;font-family:'JetBrains Mono',monospace;line-height:1;}
+.days-label{font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;}
+.days-ring{position:relative;width:64px;height:64px;}
+.ring-svg{transform:rotate(-90deg);width:64px;height:64px;}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.1);stroke-width:5;}
+.ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1.2s ease;}
+
+/* ── Content Area ── */
+.content{padding:20px 16px max(30px, calc(20px + env(safe-area-inset-bottom)));}
+
+/* ── Cards ── */
+.card{
+  background:#fff;
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:14px;
+  box-shadow:0 2px 16px rgba(108,71,255,.07);
+}
+.card-title{
+  font-size:11px;font-weight:700;
+  color:#9CA3AF;
+  letter-spacing:.7px;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+
+/* ── Debt alert ── */
+.debt-card{
+  background:linear-gradient(135deg,#FFF1F1,#FEE2E2);
+  border:1.5px solid rgba(239,68,68,.2);
+  border-radius:20px;padding:18px 20px;
+  margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.debt-info .debt-lbl{font-size:11px;color:#EF4444;font-weight:700;margin-bottom:5px;}
+.debt-info .debt-val{font-size:28px;font-weight:900;color:#EF4444;font-family:'JetBrains Mono',monospace;}
+.debt-info .debt-cur{font-size:10px;color:rgba(239,68,68,.6);margin-top:2px;}
+.debt-icon{
+  width:48px;height:48px;border-radius:14px;
+  background:rgba(239,68,68,.1);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+}
+
+/* ── Info rows ── */
+.info-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;
+  border-bottom:1px solid #F3F4F6;
+}
+.info-row:last-child{border:none;padding-bottom:0;}
+.info-key{font-size:13px;color:#6B7280;display:flex;align-items:center;gap:7px;}
+.info-key span{font-size:16px;}
+.info-val{font-size:13px;font-weight:700;color:#1A1A2E;font-family:'JetBrains Mono',monospace;}
+.info-val.active{color:#10B981;}
+.info-val.danger{color:#EF4444;}
+.info-val.warning{color:#F59E0B;}
+
+/* ── Progress bar ── */
+.prog-wrap{margin-top:16px;}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:#9CA3AF;margin-bottom:7px;}
+.prog-track{background:#F3F4F6;border-radius:8px;height:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:8px;transition:width 1.2s ease;}
+
+/* ── Buttons ── */
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;padding:15px;border-radius:14px;
+  background:linear-gradient(135deg,#6C47FF,#9B73FF);
+  border:none;color:#fff;
+  font-size:14px;font-weight:700;
+  font-family:'Tajawal',sans-serif;
+  cursor:pointer;text-decoration:none;
+  margin-bottom:10px;
+  box-shadow:0 6px 20px rgba(108,71,255,.3);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-primary:active{transform:scale(.97);box-shadow:0 3px 12px rgba(108,71,255,.25);}
+.btn-wa{
+  background:linear-gradient(135deg,#25D366,#128C7E);
+  box-shadow:0 6px 20px rgba(37,211,102,.25);
+}
+.btn-secondary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:13px;border-radius:14px;
+  background:#fff;border:1.5px solid #E5E7EB;
+  color:#6B7280;font-size:13px;font-weight:700;
+  font-family:'Tajawal',sans-serif;cursor:pointer;
+  text-decoration:none;
+}
+
+/* ── Loading ── */
+#loading{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;min-height:80svh;gap:14px;
+}
+.spinner{
+  width:42px;height:42px;border-radius:50%;
+  border:3.5px solid rgba(108,71,255,.2);
+  border-top-color:#6C47FF;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Error ── */
+#error-box{
+  display:none;
+  background:#fff;border-radius:24px;
+  padding:36px 24px;text-align:center;
+  margin:20px 16px;
+  box-shadow:0 2px 16px rgba(0,0,0,.06);
+}
+
+/* ── Lookup form ── */
+#lookup{
+  display:none;
+  background:#fff;border-radius:24px;
+  padding:24px;margin:20px 16px;
+  box-shadow:0 2px 16px rgba(0,0,0,.06);
+}
+#lookup h3{font-size:15px;font-weight:900;margin-bottom:16px;color:#1A1A2E;}
+.field{
+  width:100%;background:#F9FAFB;
+  border:1.5px solid #E5E7EB;border-radius:12px;
+  padding:13px 14px;color:#1A1A2E;
+  font-size:15px;font-family:'Tajawal',sans-serif;
+  outline:none;margin-bottom:12px;direction:ltr;
+}
+.field:focus{border-color:#6C47FF;background:#fff;}
+
+/* ── Footer note ── */
+.fnote{text-align:center;font-size:11px;color:#C4C9D9;margin-top:20px;margin-bottom:8px;}
+
+/* ── Animations ── */
+#main{display:none;animation:fadeUp .4s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <div style="font-size:13px;color:#9CA3AF">جاري تحميل بيانات اشتراكك...</div>
+  </div>
+
+  <!-- Error -->
+  <div id="error-box">
+    <div style="font-size:48px;margin-bottom:14px">🔍</div>
+    <div style="font-size:17px;font-weight:900;color:#EF4444;margin-bottom:8px">لم يتم العثور على الاشتراك</div>
+    <div style="font-size:13px;color:#9CA3AF;line-height:1.7;margin-bottom:20px">تحقق من الرابط أو تواصل مع المزود</div>
+    <button class="btn-secondary" onclick="loadSub()">🔄 إعادة المحاولة</button>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main">
+
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <!-- Top Row -->
+      <div class="hero-top-row">
+        <div class="brand-pill">
+          <div class="brand-icon">🌐</div>
+          <span class="brand-title" id="brand-name">Rand ATM</span>
+        </div>
+        <button class="refresh-btn" onclick="loadSub()" title="تحديث">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        </button>
+      </div>
+
+      <!-- Subscriber Info -->
+      <div class="sub-avatar" id="sub-avatar">ر</div>
+      <div class="sub-name-hero" id="sub-name">—</div>
+      <div class="sub-user-hero" id="sub-user">@username</div>
+      <div class="status-badge" id="sbadge">
+        <span class="bdot"></span>
+        <span id="stext">—</span>
+      </div>
+
+      <!-- Days Card -->
+      <div class="days-card">
+        <div class="days-left">
+          <div class="days-number" id="days-num">—</div>
+          <div class="days-label" id="days-lbl">يوم متبقي</div>
+        </div>
+        <div class="days-ring">
+          <svg class="ring-svg" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="27"/>
+            <circle class="ring-fill" id="ring-fill" cx="32" cy="32" r="27"
+              stroke="#6C47FF"
+              stroke-dasharray="169.6"
+              stroke-dashoffset="169.6"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- Debt Alert -->
+      <div class="debt-card" id="debt-box" style="display:none">
+        <div class="debt-info">
+          <div class="debt-lbl">مبلغ مستحق</div>
+          <div class="debt-val" id="debt-amt">0</div>
+          <div class="debt-cur">دينار عراقي (IQD)</div>
+        </div>
+        <div class="debt-icon">💸</div>
+      </div>
+
+      <!-- Subscription Details -->
+      <div class="card">
+        <div class="card-title">تفاصيل الاشتراك</div>
+
+        <div class="info-row">
+          <div class="info-key"><span>📦</span> الباقة</div>
+          <div class="info-val" id="i-price">—</div>
+        </div>
+        <div class="info-row">
+          <div class="info-key"><span>📅</span> تاريخ البداية</div>
+          <div class="info-val" id="i-start">—</div>
+        </div>
+        <div class="info-row">
+          <div class="info-key"><span>⏰</span> تاريخ الانتهاء</div>
+          <div class="info-val" id="i-end">—</div>
+        </div>
+        <div class="info-row">
+          <div class="info-key"><span>💳</span> حالة الدفع</div>
+          <div class="info-val" id="i-paid">—</div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="prog-wrap">
+          <div class="prog-labels">
+            <span>تقدم الاشتراك</span>
+            <span id="prog-pct">0%</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-fill" id="prog-f" style="width:0%;background:#6C47FF;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WhatsApp Button -->
+      <a class="btn-primary btn-wa" id="wa-link" href="#" target="_blank" style="display:none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.571l5.88-1.539A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg>
+        تواصل مع المزود
+      </a>
+
+      <div class="fnote" id="fnote">مدعوم بـ Rand ATM</div>
+    </div>
+  </div>
+
+  <!-- Lookup Form (when no username in URL) -->
+  <div id="lookup">
+    <h3>🔍 تحقق من اشتراكك</h3>
+    <input class="field" id="lu-val" placeholder="أدخل اسم المستخدم..." onkeydown="if(event.key==='Enter')doLookup()">
+    <button class="btn-primary" onclick="doLookup()" style="margin-bottom:0">بحث</button>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+const SB_URL='https://szljofrljstejsrmjzrs.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6bGpvZnJsanN0ZWpzcm1qenJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg5MjcsImV4cCI6MjA4OTYwNDkyN30.hotokJW4BXZwJYRm04-T2_rDTnKi32QGijE5dovqAtw';
+let sb=null;
+const initSB=()=>{if(!sb)sb=supabase.createClient(SB_URL,SB_KEY);return sb;};
+const fd=d=>{if(!d)return'—';const[y,m,dy]=d.split('-').map(Number);return new Date(y,m-1,dy).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const pd=d=>{const[y,m,dy]=d.split('-').map(Number);const dt=new Date(y,m-1,dy);dt.setHours(0,0,0,0);return dt;};
+const dl=e=>{const t=new Date();t.setHours(0,0,0,0);return Math.ceil((pd(e)-t)/864e5);};
+
+async function loadSub(u){
+  const p=new URLSearchParams(location.search);
+  const username=u||p.get('u')||p.get('username');
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('main').style.display='none';
+  document.getElementById('error-box').style.display='none';
+  document.getElementById('lookup').style.display='none';
+  if(!username){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('lookup').style.display='block';
+    return;
+  }
+  try{
+    const{data,error}=await initSB().from('subscribers').select('*').ilike('username',username).single();
+    document.getElementById('loading').style.display='none';
+    if(error||!data){document.getElementById('error-box').style.display='block';return;}
+    initSB().from('app_settings').select('value').eq('key','settings').single().then(({data:sd})=>{
+      const n=sd?.value?.bizName||'Rand ATM';
+      document.getElementById('brand-name').textContent=n;
+      document.getElementById('fnote').textContent='مدعوم بـ '+n;
+      document.title='اشتراكي — '+n;
+      const adminPhone=sd?.value?.adminPhone;
+      if(adminPhone){
+        const wael=document.getElementById('wa-link');
+        const msg=encodeURIComponent('مرحباً، أنا '+data.name+' (@'+data.username+')\nاستفسار عن اشتراكي');
+        wael.href='https://wa.me/964'+adminPhone.replace(/^0/,'')+`?text=${msg}`;
+        wael.style.display='flex';
+      }
+    }).catch(()=>{});
+    renderSub(data);
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('error-box').style.display='block';
+  }
+}
+
+function renderSub(s){
+  const days=dl(s.end_date);
+  const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;
+  const endD=pd(s.end_date),startD=pd(s.start_date);
+  const months=Math.max(1,Math.round((endD-startD)/864e5/30));
+  const debt=isPaid?0:(s.debt>0?s.debt:months*s.price);
+
+  let st='active';
+  if(!isPaid)st='unpaid';
+  else if(days<0)st='expired';
+  else if(days<=5)st='expiring';
+
+  // Avatar letter
+  const avatarEl=document.getElementById('sub-avatar');
+  avatarEl.textContent=s.name?s.name[0]:'؟';
+
+  document.getElementById('sub-name').textContent=s.name;
+  document.getElementById('sub-user').textContent='@'+s.username;
+
+  const stLbl={active:'الاشتراك نشط',expiring:'ينتهي قريباً',expired:'الاشتراك منتهي',unpaid:'غير مسدد'};
+  const badge=document.getElementById('sbadge');
+  badge.className='status-badge '+st;
+  document.getElementById('stext').textContent=stLbl[st];
+
+  // Days number
+  const numEl=document.getElementById('days-num');
+  const lblEl=document.getElementById('days-lbl');
+  const ringFill=document.getElementById('ring-fill');
+  const circumference=169.6;
+
+  if(days<0){
+    numEl.textContent='منتهي';
+    numEl.style.fontSize='28px';
+    lblEl.textContent='انتهى منذ '+Math.abs(days)+' يوم';
+    ringFill.style.stroke='#EF4444';
+    ringFill.style.strokeDashoffset=circumference;
+  }else{
+    numEl.textContent=days;
+    numEl.style.fontSize='48px';
+    lblEl.textContent='يوم متبقي';
+    const pct=Math.min(1,days/30);
+    ringFill.style.strokeDashoffset=circumference-(circumference*pct);
+    ringFill.style.stroke=days<=5?'#F59E0B':'#10B981';
+  }
+
+  // Progress bar
+  const pct2=Math.max(0,Math.min(100,(days/30)*100));
+  const progFill=document.getElementById('prog-f');
+  progFill.style.width=pct2+'%';
+  progFill.style.background=days<0?'#EF4444':days<=5?'#F59E0B':'#10B981';
+  document.getElementById('prog-pct').textContent=Math.round(pct2)+'%';
+
+  // Debt
+  if(debt>0){
+    document.getElementById('debt-box').style.display='flex';
+    document.getElementById('debt-amt').textContent=debt.toLocaleString('en-US');
+  }
+
+  // Info rows
+  document.getElementById('i-price').textContent=s.price.toLocaleString('en-US')+' IQD / شهر';
+  document.getElementById('i-start').textContent=fd(s.start_date);
+
+  const endEl=document.getElementById('i-end');
+  endEl.textContent=fd(s.end_date);
+  endEl.className='info-val '+(days<0?'danger':days<=5?'warning':'active');
+
+  const paidEl=document.getElementById('i-paid');
+  paidEl.textContent=isPaid?'✓ مسدد':'✗ غير مسدد';
+  paidEl.className='info-val '+(isPaid?'active':'danger');
+
+  document.getElementById('main').style.display='block';
+}
+
+function doLookup(){
+  const v=document.getElementById('lu-val').value.trim();
+  if(v)loadSub(v);
+}
+
+loadSub();
+</script>
+</body>
+</html>

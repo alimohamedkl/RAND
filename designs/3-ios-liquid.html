@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Rand ATM — iOS Liquid Glass</title>
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="../app/manifest.json">
+<link rel="apple-touch-icon" href="../app/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  /* iOS Dark */
+  --bg:#000;
+  --bg2:#1c1c1e;
+  --bg3:#2c2c2e;
+  --bg4:#3a3a3c;
+  --tx:#fff;
+  --tx2:#ebebf5;
+  --tx3:rgba(235,235,245,.6);
+  --tx4:rgba(235,235,245,.3);
+  --br:rgba(84,84,88,.65);
+  --sep:rgba(84,84,88,.35);
+  --blue:#0a84ff;
+  --indigo:#5e5ce6;
+  --purple:#bf5af2;
+  --pink:#ff375f;
+  --red:#ff453a;
+  --orange:#ff9f0a;
+  --yellow:#ffd60a;
+  --green:#30d158;
+  --teal:#64d2ff;
+  --mint:#66d4cf;
+  --grouped:#000;
+  --grouped-2:#1c1c1e;
+  --grouped-3:#2c2c2e;
+}
+html{height:100%;background:#000;overflow:hidden;position:fixed;width:100%;color-scheme:dark;-webkit-text-size-adjust:100%}
+body{
+  height:100%;width:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Tajawal',sans-serif;
+  background:#000;color:var(--tx);
+  user-select:none;-webkit-user-select:none;
+  letter-spacing:-.01em;
+}
+input,button,select,textarea{font-family:inherit;font-size:17px;-webkit-appearance:none;outline:none;border:none;color:inherit;background:none}
+
+#app,#login{position:fixed;inset:0;display:flex;flex-direction:column}
+#login{align-items:center;justify-content:center;padding:32px;background:#000}
+#app{display:none}
+
+/* Background gradient */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 0%,rgba(94,92,230,.15) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 100%,rgba(10,132,255,.1) 0%,transparent 50%);
+  z-index:0;pointer-events:none;
+}
+
+/* === LOGIN === */
+.lcard{
+  position:relative;z-index:1;
+  width:100%;max-width:380px;
+  padding:0 8px;
+}
+.lhead{text-align:center;margin-bottom:36px}
+.llogo{
+  width:78px;height:78px;border-radius:22px;
+  background:linear-gradient(180deg,#0a84ff 0%,#5e5ce6 100%);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;
+  box-shadow:0 8px 30px rgba(10,132,255,.4);
+  color:#fff;
+}
+.ltitle{font-size:32px;font-weight:800;letter-spacing:-.8px}
+.lsub{font-size:15px;color:var(--tx3);margin-top:6px;font-weight:500}
+.pin-dots{display:flex;justify-content:center;gap:18px;margin:30px 0 30px}
+.pdot{width:12px;height:12px;border-radius:50%;background:transparent;border:1.5px solid rgba(255,255,255,.4);transition:all .25s ease}
+.pdot.on{background:#fff;border-color:#fff;transform:scale(1.1)}
+.pdot.err{background:var(--red);border-color:var(--red);animation:shake .5s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;direction:ltr;max-width:300px;margin:0 auto}
+.pkey{
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  font-size:34px;font-weight:300;color:#fff;
+  cursor:pointer;transition:all .12s;
+  margin:0 auto;
+  letter-spacing:0;
+}
+.pkey:active{background:rgba(255,255,255,.4)}
+.pkey.gh{background:transparent;font-size:14px;font-weight:400;color:var(--tx2)}
+.pkey.del{background:transparent;font-size:24px;font-weight:300}
+.lerr{color:var(--red);font-size:14px;text-align:center;font-weight:600;height:18px;margin:0 0 16px}
+
+/* === HEADER (iOS Large Title) === */
+.topbar{
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+  padding:max(8px,env(safe-area-inset-top)) 16px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;position:relative;z-index:5;
+  border-bottom:.5px solid var(--sep);
+}
+.tb-mid{font-size:17px;font-weight:700;letter-spacing:-.4px;opacity:0;transition:opacity .2s}
+.tb-mid.show{opacity:1}
+.tb-btn{
+  font-size:17px;color:var(--blue);font-weight:500;
+  cursor:pointer;padding:6px;letter-spacing:-.3px;
+}
+.tb-btn.icon{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;padding:0;
+}
+
+/* Body with large title */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:120px;position:relative;z-index:1}
+.large-title{
+  padding:6px 20px 14px;
+  font-size:34px;font-weight:800;letter-spacing:-1px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.lt-actions{display:flex;gap:10px}
+.lt-btn{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(120,120,128,.24);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;cursor:pointer;
+}
+.lt-date{font-size:13px;color:var(--tx3);font-weight:500;padding:0 20px 12px}
+
+/* iOS card list */
+.section{margin:0 16px 24px}
+.section-h{
+  font-size:13px;color:var(--tx3);font-weight:500;
+  text-transform:uppercase;letter-spacing:.4px;
+  padding:0 4px 7px;
+}
+.card-group{
+  background:var(--bg2);
+  border-radius:14px;
+  overflow:hidden;
+}
+
+/* Hero summary */
+.hero-summary{
+  background:linear-gradient(135deg,#0a84ff 0%,#5e5ce6 50%,#bf5af2 100%);
+  border-radius:18px;padding:18px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 30px -10px rgba(10,132,255,.5);
+  margin-bottom:14px;
+}
+.hero-summary::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at top right,rgba(255,255,255,.2),transparent 60%);
+  pointer-events:none;
+}
+.hsum-l{position:relative}
+.hsum-lbl{font-size:12px;color:rgba(255,255,255,.75);font-weight:500;letter-spacing:.3px;text-transform:uppercase;margin-bottom:2px}
+.hsum-val{font-size:36px;font-weight:800;letter-spacing:-1.2px;line-height:1}
+.hsum-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:5px;font-weight:500}
+.hsum-r{position:relative;font-size:48px;opacity:.85}
+
+/* Stats row - iOS style segmented stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat-card{
+  background:var(--bg2);
+  border-radius:14px;padding:12px 8px;text-align:center;
+  cursor:pointer;
+  transition:opacity .2s;
+}
+.stat-card:active{opacity:.6}
+.stat-v{font-size:24px;font-weight:700;letter-spacing:-.7px;line-height:1;font-feature-settings:'tnum'}
+.stat-l{font-size:11px;color:var(--tx3);margin-top:4px;font-weight:500}
+.stat-card.act .stat-v{color:var(--green)}
+.stat-card.exp .stat-v{color:var(--orange)}
+.stat-card.ded .stat-v{color:var(--red)}
+
+/* KPI cards */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{
+  background:var(--bg2);
+  border-radius:14px;padding:14px;
+}
+.kpi-l{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx3);margin-bottom:6px;font-weight:500}
+.kpi-l-ico{width:18px;height:18px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.kpi.green .kpi-l-ico{background:rgba(48,209,88,.2);color:var(--green)}
+.kpi.red .kpi-l-ico{background:rgba(255,69,58,.2);color:var(--red)}
+.kpi-v{font-size:20px;font-weight:700;letter-spacing:-.5px;font-feature-settings:'tnum'}
+.kpi.green .kpi-v{color:var(--green)}
+.kpi.red .kpi-v{color:var(--red)}
+
+/* Search */
+.search-wrap{padding:0 16px 14px}
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(120,120,128,.24);
+  border-radius:10px;
+  padding:8px 12px;
+}
+.search-box input{flex:1;font-size:16px;color:#fff}
+.search-box input::placeholder{color:var(--tx3)}
+
+/* iOS Segmented Control */
+.segmented{
+  margin:0 16px 14px;
+  background:rgba(120,120,128,.24);
+  border-radius:9px;padding:2px;
+  display:flex;
+}
+.seg-item{
+  flex:1;padding:7px 4px;border-radius:7px;
+  font-size:13px;font-weight:600;color:var(--tx2);
+  text-align:center;cursor:pointer;
+  transition:all .15s;
+}
+.seg-item.on{background:var(--bg4);color:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12)}
+
+/* List with row dividers */
+.list{margin:0 16px}
+.list-grp{
+  background:var(--bg2);
+  border-radius:14px;
+  overflow:hidden;
+}
+.scard{
+  padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;
+  position:relative;
+  transition:background .12s;
+}
+.scard:not(:last-child)::after{
+  content:'';position:absolute;left:60px;right:0;bottom:0;
+  border-bottom:.5px solid var(--sep);
+}
+.scard:active{background:rgba(255,255,255,.05)}
+.s-av{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--indigo));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:#fff;font-size:16px;flex-shrink:0;
+}
+.scard.expiring .s-av{background:linear-gradient(135deg,var(--orange),var(--yellow))}
+.scard.expired .s-av{background:linear-gradient(135deg,var(--red),var(--pink))}
+.scard.unpaid .s-av{background:linear-gradient(135deg,var(--red),var(--orange))}
+.s-info{flex:1;min-width:0}
+.s-name{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.s-user{font-size:13px;color:var(--tx3);margin-top:1px}
+.s-r{display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex-shrink:0}
+.s-price{font-size:14px;font-weight:600;letter-spacing:-.3px;font-feature-settings:'tnum'}
+.s-days{font-size:11px;color:var(--tx3);font-weight:500}
+.scard.active .s-days{color:var(--green)}
+.scard.expiring .s-days{color:var(--orange)}
+.scard.expired .s-days{color:var(--red)}
+.scard.unpaid .s-days{color:var(--red)}
+.s-chevron{color:var(--tx4);font-size:13px;font-weight:500;flex-shrink:0;margin-right:-4px}
+
+.empty{text-align:center;padding:80px 20px;color:var(--tx3)}
+.empty-ico{font-size:50px;margin-bottom:14px;opacity:.5}
+
+/* iOS Tab bar - liquid glass */
+.tabbar{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:max(16px,calc(8px + env(safe-area-inset-bottom)));
+  width:calc(100% - 24px);max-width:430px;
+  background:rgba(40,40,42,.7);
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+  border:.5px solid rgba(255,255,255,.12);
+  border-radius:30px;
+  padding:5px;
+  display:flex;gap:3px;
+  z-index:10;
+  box-shadow:0 12px 40px rgba(0,0,0,.4);
+}
+.tab{
+  flex:1;height:50px;border-radius:25px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;color:var(--tx3);cursor:pointer;
+  transition:all .2s;
+}
+.tab.on{color:#fff}
+.tab.on .tab-ico{background:rgba(255,255,255,.18)}
+.tab-ico{
+  width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.tab svg{width:20px;height:20px}
+.tab span{font-size:9px;font-weight:600;letter-spacing:-.1px}
+.tab.add .tab-ico{
+  background:linear-gradient(135deg,var(--blue),var(--indigo));
+  width:42px;height:42px;
+  box-shadow:0 6px 18px rgba(10,132,255,.4);
+}
+.tab.add svg{width:22px;height:22px;color:#fff}
+
+/* === SHEETS (iOS sheets) === */
+.ov{
+  position:fixed;inset:0;z-index:100;
+  display:none;align-items:flex-end;justify-content:center;
+  background:rgba(0,0,0,.4);
+}
+.ov.show{display:flex;animation:ovIn .25s ease}
+.ov.ctr{align-items:center;padding:20px}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+.sheet{
+  width:100%;max-width:480px;max-height:92vh;
+  background:var(--bg2);
+  border-radius:14px 14px 0 0;
+  display:flex;flex-direction:column;
+  animation:shIn .35s cubic-bezier(.32,.72,0,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.ov.ctr .sheet{
+  border-radius:14px;max-width:380px;
+  animation:scIn .35s cubic-bezier(.32,.72,0,1);
+}
+@keyframes shIn{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scIn{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.sh-handle{padding:5px 0 0;display:flex;justify-content:center;flex-shrink:0}
+.sh-bar{width:36px;height:5px;border-radius:3px;background:rgba(120,120,128,.5)}
+.sh-title{
+  padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.sh-title .t{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.sh-cancel,.sh-save{font-size:17px;color:var(--blue);cursor:pointer;font-weight:500}
+.sh-save{font-weight:700}
+.sh-body{flex:1;overflow-y:auto;padding:0 16px 16px}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:13px;color:var(--tx3);font-weight:500;margin-bottom:7px;padding-right:4px}
+.fi{
+  width:100%;background:var(--bg3);
+  border:none;border-radius:10px;
+  padding:13px 14px;color:#fff;font-size:16px;
+  transition:all .15s;
+}
+.fi:focus{background:var(--bg4)}
+.fi::placeholder{color:var(--tx3)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn-stack{display:flex;flex-direction:column;gap:8px;padding:8px 16px max(16px,env(safe-area-inset-bottom))}
+.btn{
+  padding:14px;border-radius:14px;
+  font-size:17px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  transition:opacity .15s;
+}
+.btn:active{opacity:.6}
+.btn.bp{background:var(--blue);color:#fff}
+.btn.bg{background:var(--bg3);color:#fff}
+.btn.bd{background:rgba(255,69,58,.15);color:var(--red)}
+.btn.bs{background:var(--green);color:#000}
+
+.pkg-row{display:flex;flex-wrap:wrap;gap:6px}
+.pkg{
+  padding:8px 14px;border-radius:50px;
+  background:var(--bg3);
+  font-size:14px;font-weight:600;color:#fff;cursor:pointer;
+}
+.pkg.on{background:var(--blue);color:#fff}
+
+.ptog{display:flex;background:var(--bg3);border-radius:10px;padding:2px}
+.pt{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;color:var(--tx2)}
+.pt.paid.on{background:var(--green);color:#000}
+.pt.unpaid.on{background:var(--red);color:#fff}
+
+/* iOS-style settings rows */
+.set-grp{
+  background:var(--bg2);
+  border-radius:14px;
+  margin-bottom:24px;
+  overflow:hidden;
+}
+.set-grp-h{
+  padding:0 4px 7px;font-size:13px;color:var(--tx3);
+  font-weight:500;text-transform:uppercase;letter-spacing:.4px;
+  margin-top:14px;
+}
+.set-row{
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:relative;gap:14px;cursor:pointer;
+}
+.set-row:not(:last-child)::after{
+  content:'';position:absolute;left:16px;right:0;bottom:0;
+  border-bottom:.5px solid var(--sep);
+}
+.set-row:active{background:rgba(255,255,255,.05)}
+.set-k{font-size:16px;display:flex;align-items:center;gap:11px;flex:1;min-width:0}
+.set-k-ico{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:#fff;flex-shrink:0;
+}
+.set-v{font-size:15px;color:var(--tx3);font-weight:500;text-align:left;direction:ltr}
+.set-row input.fi{background:transparent;padding:0;flex:1;text-align:left;direction:ltr;font-size:15px;color:var(--tx2);font-weight:500}
+.set-chevron{color:var(--tx4);font-size:14px}
+
+/* Toast */
+.toasts{position:fixed;top:max(60px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:90%;max-width:380px}
+.toast{
+  background:rgba(40,40,42,.95);
+  backdrop-filter:blur(20px);
+  border:.5px solid rgba(255,255,255,.12);
+  border-radius:14px;padding:13px 16px;
+  display:flex;align-items:center;gap:10px;
+  font-size:14px;font-weight:600;
+  box-shadow:0 12px 30px rgba(0,0,0,.4);
+  animation:toastIn .3s;
+}
+.toast.s{color:var(--green)}
+.toast.e{color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Profile */
+.prof-h{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 0 18px}
+.prof-av{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--indigo));display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;font-weight:700;flex-shrink:0;box-shadow:0 12px 30px rgba(10,132,255,.4)}
+.prof-name{font-size:24px;font-weight:700;letter-spacing:-.7px}
+.prof-user{font-size:14px;color:var(--tx3);font-weight:500}
+.prof-row{
+  padding:12px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:relative;gap:14px;
+}
+.prof-row:not(:last-child)::after{
+  content:'';position:absolute;left:16px;right:0;bottom:0;
+  border-bottom:.5px solid var(--sep);
+}
+.prof-k{font-size:15px;display:flex;align-items:center;gap:11px;color:var(--tx2)}
+.prof-v{font-size:15px;font-weight:500;font-feature-settings:'tnum';color:var(--tx2)}
+.prof-v.g{color:var(--green)}
+.prof-v.a{color:var(--orange)}
+.prof-v.r{color:var(--red)}
+
+.acts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 0 18px}
+.act{
+  display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--tx2);
+}
+.act-ico{
+  width:48px;height:48px;border-radius:50%;
+  background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--blue);
+  transition:opacity .15s;
+}
+.act:active .act-ico{opacity:.6}
+.act svg{width:20px;height:20px}
+.act.wa .act-ico{background:rgba(48,209,88,.2);color:var(--green)}
+.act.r .act-ico{background:rgba(255,69,58,.2);color:var(--red)}
+.act.b .act-ico{background:rgba(94,92,230,.2);color:var(--indigo)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="lcard">
+    <div class="lhead">
+      <div class="llogo">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M2 12h20"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div class="ltitle" id="login-title">Rand ATM</div>
+      <div class="lsub">أدخل رمز PIN</div>
+    </div>
+    <div class="pin-dots">
+      <div class="pdot" id="pd0"></div>
+      <div class="pdot" id="pd1"></div>
+      <div class="pdot" id="pd2"></div>
+      <div class="pdot" id="pd3"></div>
+    </div>
+    <div class="lerr" id="lerr"></div>
+    <div class="pin-grid">
+      <button class="pkey" onclick="pin(1)">1</button>
+      <button class="pkey" onclick="pin(2)">2</button>
+      <button class="pkey" onclick="pin(3)">3</button>
+      <button class="pkey" onclick="pin(4)">4</button>
+      <button class="pkey" onclick="pin(5)">5</button>
+      <button class="pkey" onclick="pin(6)">6</button>
+      <button class="pkey" onclick="pin(7)">7</button>
+      <button class="pkey" onclick="pin(8)">8</button>
+      <button class="pkey" onclick="pin(9)">9</button>
+      <button class="pkey gh" onclick="pinClear()">Clear</button>
+      <button class="pkey" onclick="pin(0)">0</button>
+      <button class="pkey del" onclick="pinDel()">⌫</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-btn icon" onclick="loadAll()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </div>
+    <div class="tb-mid" id="tb-mid">Rand ATM</div>
+    <div class="tb-btn" onclick="openSettings()">تحرير</div>
+  </div>
+
+  <div class="body" id="body">
+    <div class="large-title">
+      <span id="biz-name">Rand ATM</span>
+    </div>
+    <div class="lt-date" id="hdate"></div>
+
+    <div class="section">
+      <div class="hero-summary">
+        <div class="hsum-l">
+          <div class="hsum-lbl">المشتركون</div>
+          <div class="hsum-val" id="hero-total">0</div>
+          <div class="hsum-sub" id="hero-sub">0 نشط · 0 قارب</div>
+        </div>
+        <div class="hsum-r">👥</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card" onclick="setQF('all')"><div class="stat-v" id="st-tot">0</div><div class="stat-l">الكل</div></div>
+        <div class="stat-card act" onclick="setQF('active')"><div class="stat-v" id="st-act">0</div><div class="stat-l">نشط</div></div>
+        <div class="stat-card exp" onclick="setQF('expiring')"><div class="stat-v" id="st-exp">0</div><div class="stat-l">قارب</div></div>
+        <div class="stat-card ded" onclick="setQF('expired')"><div class="stat-v" id="st-ded">0</div><div class="stat-l">منتهي</div></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi green">
+          <div class="kpi-l"><div class="kpi-l-ico">↑</div>الدخل الشهري</div>
+          <div class="kpi-v" id="kpi-inc">0</div>
+        </div>
+        <div class="kpi red">
+          <div class="kpi-l"><div class="kpi-l-ico">↓</div>الديون</div>
+          <div class="kpi-v" id="kpi-debt">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="opacity:.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="search" placeholder="ابحث" oninput="renderList()">
+      </div>
+    </div>
+
+    <div class="segmented" id="seg">
+      <div class="seg-item on" data-f="all" onclick="setSeg(this)">الكل</div>
+      <div class="seg-item" data-f="active" onclick="setSeg(this)">نشط</div>
+      <div class="seg-item" data-f="expiring" onclick="setSeg(this)">قارب</div>
+      <div class="seg-item" data-f="expired" onclick="setSeg(this)">منتهي</div>
+      <div class="seg-item" data-f="unpaid" onclick="setSeg(this)">دين</div>
+    </div>
+
+    <div class="list">
+      <div class="list-grp" id="list"></div>
+    </div>
+  </div>
+
+  <!-- iOS Tab Bar -->
+  <div class="tabbar">
+    <div class="tab on" onclick="setQF('all')">
+      <div class="tab-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+      <span>الكل</span>
+    </div>
+    <div class="tab" onclick="setQF('unpaid')">
+      <div class="tab-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <span>الديون</span>
+    </div>
+    <div class="tab add" onclick="openAdd()">
+      <div class="tab-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+    </div>
+    <div class="tab" onclick="setQF('expiring')">
+      <div class="tab-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <span>قارب</span>
+    </div>
+    <div class="tab" onclick="openSettings()">
+      <div class="tab-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <span>إعدادات</span>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT (iOS form sheet) -->
+<div class="ov" id="ov-form">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <div class="sh-cancel" onclick="closeOv('ov-form')">إلغاء</div>
+      <div class="t" id="form-title">مشترك جديد</div>
+      <div class="sh-save" onclick="saveSub()">حفظ</div>
+    </div>
+    <div class="sh-body">
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k">الاسم *</div><input class="fi" id="f-name" placeholder="أحمد محمد"></div>
+        <div class="set-row"><div class="set-k">الهاتف</div><input class="fi" id="f-phone" type="tel" placeholder="07xxxxxxxx"></div>
+      </div>
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k">المستخدم *</div><input class="fi" id="f-user" placeholder="ahmed_99"></div>
+        <div class="set-row"><div class="set-k">السعر *</div><input class="fi" id="f-price" type="number" placeholder="35000"></div>
+        <div class="set-row"><div class="set-k">المرور</div><input class="fi" id="f-pw" placeholder="اختياري"></div>
+      </div>
+      <div class="set-grp-h">باقات جاهزة</div>
+      <div class="fg" style="padding:0 4px"><div class="pkg-row" id="pkg-row"></div></div>
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k">البداية *</div><input class="fi" id="f-start" type="date"></div>
+        <div class="set-row"><div class="set-k">النهاية</div><input class="fi" id="f-end" type="date" readonly style="opacity:.6"></div>
+      </div>
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k">ملاحظات</div><input class="fi" id="f-notes" placeholder="اختياري"></div>
+      </div>
+      <div class="fg" style="margin-top:18px;padding:0 4px">
+        <div class="ptog">
+          <button class="pt paid on" id="pt-p" onclick="setPay('paid')">✓ مسدد</button>
+          <button class="pt unpaid" id="pt-u" onclick="setPay('unpaid')">✕ غير مسدد</button>
+        </div>
+      </div>
+      <button class="btn bd" id="del-btn" onclick="delSub()" style="display:none;width:100%;margin-top:10px">🗑 حذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="ov" id="ov-profile">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <div class="sh-cancel" onclick="closeOv('ov-profile')">إغلاق</div>
+      <div class="t">المشترك</div>
+      <div class="sh-save" onclick="profEdit()">تحرير</div>
+    </div>
+    <div class="sh-body">
+      <div class="prof-h">
+        <div class="prof-av" id="prof-av">؟</div>
+        <div>
+          <div class="prof-name" id="prof-name">—</div>
+          <div class="prof-user" id="prof-user">—</div>
+        </div>
+      </div>
+      <div class="acts-row">
+        <div class="act wa" onclick="profWA()"><div class="act-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.859L.057 23.571l5.88-1.539A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z"/></svg></div><span>واتساب</span></div>
+        <div class="act b" onclick="profRenew()"><div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div><span>تجديد</span></div>
+        <div class="act" onclick="profEdit()"><div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div><span>تعديل</span></div>
+        <div class="act r" onclick="profDel()"><div class="act-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div><span>حذف</span></div>
+      </div>
+      <div class="set-grp" id="prof-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="ov" id="ov-set">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <div class="sh-cancel" onclick="closeOv('ov-set')">إلغاء</div>
+      <div class="t">الإعدادات</div>
+      <div class="sh-save" onclick="closeOv('ov-set')">تم</div>
+    </div>
+    <div class="sh-body">
+      <div class="set-grp-h">عام</div>
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k"><div class="set-k-ico" style="background:var(--blue)">A</div>اسم التطبيق</div><input class="fi" id="set-biz" oninput="setting('bizName',this.value);applyName()"></div>
+        <div class="set-row"><div class="set-k"><div class="set-k-ico" style="background:var(--green)">📞</div>هاتف المزود</div><input class="fi" id="set-phone" type="tel" placeholder="07xxxxxxxx" onchange="setting('adminPhone',this.value)"></div>
+        <div class="set-row"><div class="set-k"><div class="set-k-ico" style="background:var(--orange)">⏰</div>تنبيه قبل الانتهاء</div>
+          <select class="fi" id="set-alert" onchange="setting('alertDays',+this.value);_alertDays=+this.value;renderList();updateStats()" style="background:transparent;color:var(--blue);text-align:left;direction:ltr;font-weight:600">
+            <option value="3">3 أيام</option>
+            <option value="5" selected>5 أيام</option>
+            <option value="7">7 أيام</option>
+            <option value="10">10 أيام</option>
+          </select>
+        </div>
+      </div>
+      <div class="set-grp-h">إحصائيات</div>
+      <div class="set-grp">
+        <div class="set-row"><div class="set-k">إجمالي المشتركين</div><div class="set-v" id="set-tot">0</div></div>
+        <div class="set-row"><div class="set-k">الدخل الشهري</div><div class="set-v" id="set-inc">0</div></div>
+        <div class="set-row"><div class="set-k">الديون</div><div class="set-v" id="set-debt">0</div></div>
+      </div>
+      <div class="set-grp-h">باقات جاهزة</div>
+      <div class="set-grp" style="padding:14px 16px">
+        <div id="set-pkgs" class="pkg-row" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <input class="fi" id="new-pkg" type="number" placeholder="أضف سعر" style="flex:1">
+          <button class="btn bp" style="padding:11px 18px;flex:0 0 auto" onclick="addPkg()">+</button>
+        </div>
+      </div>
+      <div class="set-grp-h">المزيد</div>
+      <div class="set-grp">
+        <a href="../app/index.html" class="set-row" style="text-decoration:none;color:inherit"><div class="set-k"><div class="set-k-ico" style="background:var(--purple)">⮞</div>التطبيق الكامل</div><div class="set-chevron">›</div></a>
+        <div class="set-row" onclick="changePIN()"><div class="set-k"><div class="set-k-ico" style="background:var(--indigo)">🔑</div>تغيير PIN</div><div class="set-chevron">›</div></div>
+        <div class="set-row" onclick="logout()"><div class="set-k" style="color:var(--red)"><div class="set-k-ico" style="background:var(--red)">⏏</div>تسجيل خروج</div><div class="set-chevron">›</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RENEW -->
+<div class="ov ctr" id="ov-renew">
+  <div class="sheet">
+    <div class="sh-handle"><div class="sh-bar"></div></div>
+    <div class="sh-title">
+      <div class="sh-cancel" onclick="closeOv('ov-renew')">إلغاء</div>
+      <div class="t">تجديد الاشتراك</div>
+      <div class="sh-save" onclick="doRenew()">تجديد</div>
+    </div>
+    <div class="sh-body" id="renew-body"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+const SB_URL='https://szljofrljstejsrmjzrs.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6bGpvZnJsanN0ZWpzcm1qenJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMjg5MjcsImV4cCI6MjA4OTYwNDkyN30.hotokJW4BXZwJYRm04-T2_rDTnKi32QGijE5dovqAtw';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+let _subs=[],_pkgs=[30000,35000,40000,45000,50000,55000,60000,65000,80000,100000,120000];
+let _cfg={bizName:'Rand ATM',adminPhone:'',alertDays:5};
+let _alertDays=5,_filter='all',_curEdit=null,_curView=null,_payChoice='paid';
+
+const $=id=>document.getElementById(id);
+const fmt=n=>(n||0).toLocaleString('en-US');
+const pd=d=>{if(!d)return null;const[y,m,dy]=d.split('-').map(Number);const dt=new Date(y,m-1,dy);dt.setHours(0,0,0,0);return dt;};
+const fd=d=>{if(!d)return'—';return pd(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});};
+const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
+const dl=s=>Math.ceil((pd(s.end_date)-today())/864e5);
+const status=s=>{
+  const isPaid=s.is_paid===true||s.is_paid==='true'||s.is_paid===1;
+  if(!isPaid)return'unpaid';
+  const d=dl(s);
+  if(d<0)return'expired';
+  if(d<=_alertDays)return'expiring';
+  return'active';
+};
+const toast=(m,t='s')=>{
+  const el=document.createElement('div');
+  el.className='toast '+t;
+  el.textContent=(t==='e'?'⚠️ ':'✓ ')+m;
+  $('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+};
+const fmtToday=()=>new Date().toLocaleDateString('ar-IQ',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const esc=s=>(s||'').toString().replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c]);
+
+const PIN_KEY='rand_pin_v1';
+const getPin=()=>localStorage.getItem(PIN_KEY)||'8787';
+let _pin='';
+function pin(n){if(_pin.length>=4)return;_pin+=n;updateDots();if(_pin.length===4)setTimeout(checkPin,180)}
+function pinDel(){_pin=_pin.slice(0,-1);updateDots()}
+function pinClear(){_pin='';updateDots()}
+function updateDots(){for(let i=0;i<4;i++)$('pd'+i).className='pdot'+(i<_pin.length?' on':'')}
+function checkPin(){
+  if(_pin===getPin()){
+    sessionStorage.setItem('lg','1');
+    $('login').style.display='none';
+    $('app').style.display='flex';
+    initApp();
+  }else{
+    $('lerr').textContent='رمز غير صحيح';
+    [0,1,2,3].forEach(i=>$('pd'+i).classList.add('err'));
+    setTimeout(()=>{_pin='';[0,1,2,3].forEach(i=>$('pd'+i).className='pdot');$('lerr').textContent=''},700);
+  }
+}
+function changePIN(){
+  const np=prompt('PIN جديد:');
+  if(!np||!/^\d{4}$/.test(np))return toast('أدخل 4 أرقام','e');
+  const c=prompt('أعد الإدخال:');if(c!==np)return toast('غير متطابق','e');
+  localStorage.setItem(PIN_KEY,np);toast('تم تغيير الرمز');
+}
+function logout(){sessionStorage.removeItem('lg');location.reload()}
+
+async function loadAll(){
+  await Promise.all([loadSubs(),loadCfg(),loadPkgs()]);
+  applyName();renderList();updateStats();
+}
+async function loadSubs(){
+  const{data,error}=await sb.from('subscribers').select('*').order('name');
+  if(error){console.error(error);return toast('فشل التحميل','e');}
+  _subs=data||[];
+}
+async function loadCfg(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','settings').maybeSingle();
+  if(data?.value)_cfg={..._cfg,...data.value};
+  _alertDays=+_cfg.alertDays||5;
+  $('set-biz').value=_cfg.bizName||'';
+  $('set-phone').value=_cfg.adminPhone||'';
+  $('set-alert').value=_alertDays;
+}
+async function loadPkgs(){
+  const{data}=await sb.from('app_settings').select('value').eq('key','packages').maybeSingle();
+  if(data?.value&&Array.isArray(data.value))_pkgs=data.value;
+  renderPkgs();renderSetPkgs();
+}
+async function setting(k,v){_cfg[k]=v;await sb.from('app_settings').upsert({key:'settings',value:_cfg,updated_at:new Date().toISOString()})}
+async function savePkgs(){await sb.from('app_settings').upsert({key:'packages',value:_pkgs,updated_at:new Date().toISOString()})}
+
+function applyName(){
+  const n=_cfg.bizName||'Rand ATM';
+  $('biz-name').textContent=n;
+  $('login-title').textContent=n;
+  $('tb-mid').textContent=n;
+  document.title=n+' — iOS Liquid';
+}
+function setSeg(el){
+  document.querySelectorAll('.seg-item').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  _filter=el.dataset.f;renderList();
+}
+function setQF(f){
+  document.querySelectorAll('.seg-item').forEach(s=>s.classList.toggle('on',s.dataset.f===f));
+  _filter=f;renderList();
+  $('body').scrollTo({top:300,behavior:'smooth'});
+}
+function renderList(){
+  const q=$('search').value.trim().toLowerCase();
+  let arr=[..._subs];
+  if(q)arr=arr.filter(s=>(s.name||'').toLowerCase().includes(q)||(s.username||'').toLowerCase().includes(q)||(s.phone||'').includes(q));
+  if(_filter!=='all')arr=arr.filter(s=>status(s)===_filter);
+  arr.sort((a,b)=>{
+    const sa=status(a),sb_=status(b);
+    const ord={unpaid:0,expired:1,expiring:2,active:3};
+    if(ord[sa]!==ord[sb_])return ord[sa]-ord[sb_];
+    return dl(a)-dl(b);
+  });
+  const list=$('list');
+  if(!arr.length){list.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div>لا يوجد مشتركين</div></div>';return;}
+  list.innerHTML=arr.map(s=>{
+    const st=status(s),d=dl(s);
+    const dlbl=d<0?`منتهي ${Math.abs(d)}ي`:d===0?'اليوم':`${d}ي متبقي`;
+    return `<div class="scard ${st}" onclick="openProfile('${s.id}')">
+      <div class="s-av">${(s.name||'؟')[0]}</div>
+      <div class="s-info">
+        <div class="s-name">${esc(s.name)}</div>
+        <div class="s-user">@${esc(s.username)}</div>
+      </div>
+      <div class="s-r">
+        <div class="s-price">${fmt(s.price)}</div>
+        <div class="s-days">${dlbl}</div>
+      </div>
+      <div class="s-chevron">›</div>
+    </div>`;
+  }).join('');
+}
+function updateStats(){
+  let act=0,exp=0,ded=0,inc=0,debt=0;
+  _subs.forEach(s=>{
+    const st=status(s);
+    if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;
+    if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
+  });
+  $('st-tot').textContent=_subs.length;$('st-act').textContent=act;
+  $('st-exp').textContent=exp;$('st-ded').textContent=ded;
+  $('hero-total').textContent=_subs.length;
+  $('hero-sub').textContent=`${act} نشط · ${exp} قارب · ${ded} منتهي`;
+  $('kpi-inc').textContent=fmt(inc);
+  $('kpi-debt').textContent=fmt(debt);
+  $('set-tot').textContent=_subs.length;
+  $('set-inc').textContent=fmt(inc);
+  $('set-debt').textContent=fmt(debt);
+}
+function renderPkgs(){$('pkg-row').innerHTML=_pkgs.map(p=>`<div class="pkg" onclick="pickPkg(${p},this)">${fmt(p)}</div>`).join('')}
+function pickPkg(p,el){
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');$('f-price').value=p;
+}
+function renderSetPkgs(){$('set-pkgs').innerHTML=_pkgs.map((p,i)=>`<div class="pkg on" onclick="rmPkg(${i})">${fmt(p)} ✕</div>`).join('')}
+async function addPkg(){
+  const v=+$('new-pkg').value;
+  if(!v||v<1000)return toast('سعر غير صحيح','e');
+  if(_pkgs.includes(v))return toast('موجود','e');
+  _pkgs.push(v);_pkgs.sort((a,b)=>a-b);
+  await savePkgs();$('new-pkg').value='';renderPkgs();renderSetPkgs();toast('أضيفت');
+}
+async function rmPkg(i){
+  if(!confirm('حذف؟'))return;
+  _pkgs.splice(i,1);await savePkgs();renderPkgs();renderSetPkgs();toast('حُذفت');
+}
+
+function openAdd(){
+  _curEdit=null;
+  $('form-title').textContent='مشترك جديد';
+  $('del-btn').style.display='none';
+  ['f-name','f-phone','f-user','f-price','f-pw','f-notes'].forEach(i=>$(i).value='');
+  const t=new Date(),s=t.toISOString().slice(0,10);
+  $('f-start').value=s;
+  const e=new Date(t);e.setDate(e.getDate()+30);
+  $('f-end').value=e.toISOString().slice(0,10);
+  setPay('paid');
+  document.querySelectorAll('#pkg-row .pkg').forEach(x=>x.classList.remove('on'));
+  show('ov-form');
+}
+function openEdit(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curEdit=id;
+  $('form-title').textContent='تحرير';
+  $('del-btn').style.display='flex';
+  $('f-name').value=s.name||'';$('f-phone').value=s.phone||'';
+  $('f-user').value=s.username||'';$('f-price').value=s.price||'';
+  $('f-pw').value=s.password||'';$('f-start').value=s.start_date||'';
+  $('f-end').value=s.end_date||'';$('f-notes').value=s.note||'';
+  setPay(s.is_paid?'paid':'unpaid');show('ov-form');
+}
+function setPay(p){_payChoice=p;$('pt-p').classList.toggle('on',p==='paid');$('pt-u').classList.toggle('on',p==='unpaid')}
+async function saveSub(){
+  const name=$('f-name').value.trim(),user=$('f-user').value.trim(),price=+$('f-price').value;
+  if(!name)return toast('الاسم مطلوب','e');
+  if(!user)return toast('اسم المستخدم مطلوب','e');
+  if(!price||price<1000)return toast('السعر غير صحيح','e');
+  const s={
+    name,username:user,
+    phone:$('f-phone').value.trim()||null,
+    password:$('f-pw').value.trim()||null,
+    price,
+    start_date:$('f-start').value,end_date:$('f-end').value,
+    note:$('f-notes').value.trim()||null,
+    is_paid:_payChoice==='paid',
+    debt:_payChoice==='paid'?0:price,
+    updated_at:new Date().toISOString()
+  };
+  if(_curEdit){
+    const{error}=await sb.from('subscribers').update(s).eq('id',_curEdit);
+    if(error)return toast('فشل','e');toast('تم التعديل');
+  }else{
+    const{error}=await sb.from('subscribers').insert(s);
+    if(error){console.error(error);return toast('فشل (يوزر مكرر؟)','e');}
+    toast('أُضيف');
+  }
+  closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+async function delSub(){
+  if(!_curEdit||!confirm('حذف نهائياً؟'))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curEdit);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-form');await loadSubs();renderList();updateStats();
+}
+document.addEventListener('input',e=>{
+  if(e.target.id==='f-start'){
+    const v=e.target.value;
+    if(v){const d=new Date(v);d.setDate(d.getDate()+30);$('f-end').value=d.toISOString().slice(0,10);}
+  }
+});
+
+function openProfile(id){
+  const s=_subs.find(x=>x.id===id);if(!s)return;
+  _curView=id;
+  const st=status(s),d=dl(s);
+  $('prof-av').textContent=(s.name||'؟')[0];
+  $('prof-name').textContent=s.name;
+  $('prof-user').textContent='@'+s.username;
+  const stLbl={active:'نشط',expiring:'قارب على الانتهاء',expired:'منتهي',unpaid:'غير مسدد'}[st];
+  const dV=d<0?'r':d<=_alertDays?'a':'g';
+  const dT=d<0?`منتهي منذ ${Math.abs(d)} يوم`:`متبقي ${d} يوم`;
+  $('prof-body').innerHTML=`
+    <div class="prof-row"><span class="prof-k">الحالة</span><span class="prof-v ${dV}">${stLbl}</span></div>
+    <div class="prof-row"><span class="prof-k">الباقة</span><span class="prof-v">${fmt(s.price)} IQD</span></div>
+    <div class="prof-row"><span class="prof-k">الهاتف</span><span class="prof-v">${s.phone||'—'}</span></div>
+    <div class="prof-row"><span class="prof-k">البداية</span><span class="prof-v">${fd(s.start_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">الانتهاء</span><span class="prof-v ${dV}">${fd(s.end_date)}</span></div>
+    <div class="prof-row"><span class="prof-k">المتبقي</span><span class="prof-v ${dV}">${dT}</span></div>
+    <div class="prof-row"><span class="prof-k">الدفع</span><span class="prof-v ${s.is_paid?'g':'r'}">${s.is_paid?'مسدد ✓':'غير مسدد ✕'}</span></div>
+    ${s.debt>0?`<div class="prof-row"><span class="prof-k">الدين</span><span class="prof-v r">${fmt(s.debt)} IQD</span></div>`:''}
+    ${s.password?`<div class="prof-row"><span class="prof-k">المرور</span><span class="prof-v">${esc(s.password)}</span></div>`:''}
+    ${s.note?`<div class="prof-row"><span class="prof-k">ملاحظات</span><span class="prof-v" style="font-feature-settings:normal;color:var(--tx2);text-align:left;max-width:60%">${esc(s.note)}</span></div>`:''}
+  `;
+  show('ov-profile');
+}
+function profEdit(){const id=_curView;closeOv('ov-profile');setTimeout(()=>openEdit(id),200)}
+async function profDel(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  if(!confirm(`حذف "${s.name}"؟`))return;
+  const{error}=await sb.from('subscribers').delete().eq('id',_curView);
+  if(error)return toast('فشل','e');
+  toast('حُذف');closeOv('ov-profile');await loadSubs();renderList();updateStats();
+}
+function profWA(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const phone=(s.phone||'').replace(/^0/,'');
+  if(!phone)return toast('لا يوجد رقم','e');
+  const d=dl(s);
+  const msg=encodeURIComponent(`مرحباً ${s.name}\nاشتراكك: @${s.username}\nمتبقي: ${d>0?d+' يوم':'منتهي'}`);
+  window.open(`https://wa.me/964${phone}?text=${msg}`,'_blank');
+}
+function profRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  $('renew-body').innerHTML=`
+    <div class="set-grp" style="padding:18px 16px;text-align:center">
+      <div style="font-size:18px;font-weight:700;margin-bottom:6px">${esc(s.name)}</div>
+      <div style="font-size:14px;color:var(--tx3);line-height:1.7">
+        من <b style="color:#fff">${fd(today)}</b><br>
+        إلى <b style="color:var(--green)">${fd(newEnd)}</b><br>
+        المبلغ: <b style="color:var(--blue)">${fmt(s.price)} IQD</b>
+      </div>
+    </div>
+    <div style="padding:0 4px;margin-top:14px">
+      <div class="ptog">
+        <button class="pt paid on" id="rn-p" onclick="document.getElementById('rn-p').classList.add('on');document.getElementById('rn-u').classList.remove('on')">✓ مسدد</button>
+        <button class="pt unpaid" id="rn-u" onclick="document.getElementById('rn-u').classList.add('on');document.getElementById('rn-p').classList.remove('on')">✕ غير مسدد</button>
+      </div>
+    </div>`;
+  closeOv('ov-profile');setTimeout(()=>show('ov-renew'),250);
+}
+async function doRenew(){
+  const s=_subs.find(x=>x.id===_curView);if(!s)return;
+  const isPaid=$('rn-p').classList.contains('on');
+  const today=new Date().toISOString().slice(0,10);
+  const e=new Date();e.setDate(e.getDate()+30);
+  const newEnd=e.toISOString().slice(0,10);
+  const newDebt=isPaid?0:(+(s.debt||0)+ +s.price);
+  const{error}=await sb.from('subscribers').update({
+    start_date:today,end_date:newEnd,
+    is_paid:isPaid,debt:newDebt,updated_at:new Date().toISOString()
+  }).eq('id',s.id);
+  if(error)return toast('فشل','e');
+  toast('تم التجديد');closeOv('ov-renew');await loadSubs();renderList();updateStats();
+}
+
+function openSettings(){show('ov-set')}
+function show(id){$(id).classList.add('show')}
+function closeOv(id){$(id).classList.remove('show')}
+
+// Sticky title behavior
+$('body')&&$('body').addEventListener('scroll',()=>{
+  $('tb-mid').classList.toggle('show',$('body').scrollTop>50);
+});
+
+async function initApp(){
+  $('hdate').textContent=fmtToday();
+  await loadAll();
+}
+
+if(sessionStorage.getItem('lg')==='1'){
+  $('login').style.display='none';
+  $('app').style.display='flex';
+  initApp();
+}
+document.querySelectorAll('.ov').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('show')});
+});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('../app/sw.js',{scope:'../app/'}).catch(()=>{});}
+</script>
+</body>
+</html>
