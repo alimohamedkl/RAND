@@ -1,5 +1,5 @@
 // Rand ATM v2 — Service Worker
-const CACHE = 'rand-v2-1';
+const CACHE = 'rand-v2-2';
 const BASE = self.registration.scope;
 
 const SHELL = [

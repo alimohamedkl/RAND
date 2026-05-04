@@ -467,50 +467,8 @@ textarea.fi{resize:none;font-family:inherit;line-height:1.6}
 
   <div class="body" id="body">
 
-    <!-- HOME -->
-    <div class="page on" id="p-home">
-      <div class="greet">
-        <div class="greet-t" id="greet-t">مرحباً</div>
-        <div class="greet-n">إدارة الاشتراكات</div>
-      </div>
-      <div class="kpi-row">
-        <div class="kpi green" onclick="openCharts()">
-          <div class="kpi-l">📈 الدخل الشهري</div>
-          <div class="kpi-v" id="kpi-inc">0</div>
-          <div class="kpi-c">دينار عراقي</div>
-        </div>
-        <div class="kpi dk" onclick="goList('unpaid')">
-          <div class="kpi-l">💸 ديون</div>
-          <div class="kpi-v" id="kpi-debt">0</div>
-          <div class="kpi-c" id="kpi-debt-cnt">0 مشترك</div>
-        </div>
-      </div>
-      <div class="qstats">
-        <div class="qst" onclick="goList('all')"><div class="qst-v" id="qst-tot">0</div><div class="qst-l">إجمالي</div></div>
-        <div class="qst green" onclick="goList('active')"><div class="qst-v" id="qst-act">0</div><div class="qst-l">نشط</div></div>
-        <div class="qst amb" onclick="goList('expiring')"><div class="qst-v" id="qst-exp">0</div><div class="qst-l">قارب</div></div>
-        <div class="qst red" onclick="goList('expired')"><div class="qst-v" id="qst-ded">0</div><div class="qst-l">منتهي</div></div>
-      </div>
-
-      <div class="section-h">
-        <div class="section-t"><span class="ico">⚠️</span> يحتاج متابعة</div>
-        <div class="section-link" onclick="goList('attention')" id="attn-cnt">عرض الكل ›</div>
-      </div>
-      <div class="attn-list">
-        <div class="attn-card" id="attn-list"></div>
-      </div>
-
-      <div class="section-h">
-        <div class="section-t"><span class="ico">📊</span> الباقات الأكثر</div>
-        <div class="section-link" onclick="openCharts()">رسوم بيانية ›</div>
-      </div>
-      <div class="pkg-stats">
-        <div class="pkg-srow" id="pkg-stats"></div>
-      </div>
-    </div>
-
-    <!-- LIST -->
-    <div class="page" id="p-list">
+    <!-- LIST (default) -->
+    <div class="page on" id="p-list">
       <div class="search-wrap">
         <div class="search-box">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="opacity:.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -617,8 +575,7 @@ textarea.fi{resize:none;font-family:inherit;line-height:1.6}
   </div>
 
   <div class="bnav">
-    <div class="bnav-item on" data-page="home" onclick="goPage('home',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>الرئيسية</span></div>
-    <div class="bnav-item" data-page="list" onclick="goPage('list',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><span>المشتركون</span></div>
+    <div class="bnav-item on" data-page="list" onclick="goPage('list',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>المشتركون</span></div>
     <div class="bnav-add" onclick="openAdd()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
     <div class="bnav-item" data-page="more" onclick="goPage('more',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span>المزيد</span></div>
   </div>
@@ -1007,7 +964,9 @@ function goList(filter){
 }
 
 // ─────────── RENDER ───────────
-function render(){updateStats();renderHomeAttn();renderHomePkg();renderList();}
+function render(){updateStats();renderList();}
+const _set=(id,v)=>{const el=$(id);if(el)el.textContent=v;};
+const _setHTML=(id,v)=>{const el=$(id);if(el)el.innerHTML=v;};
 
 function updateStats(){
   let act=0,exp=0,ded=0,unp=0,inc=0,debt=0;
@@ -1016,14 +975,9 @@ function updateStats(){
     if(st==='active')act++;else if(st==='expiring')exp++;else if(st==='expired')ded++;else if(st==='unpaid')unp++;
     if(st!=='unpaid')inc+=+s.price||0;else debt+=+(s.debt||s.price||0);
   });
-  $('qst-tot').textContent=_subs.length;$('qst-act').textContent=act;
-  $('qst-exp').textContent=exp;$('qst-ded').textContent=ded;
-  $('kpi-inc').textContent=fmtK(inc);$('kpi-debt').textContent=fmtK(debt);
-  $('kpi-debt-cnt').textContent=unp+' مشترك';
-  $('rep-inc').textContent=fmt(inc)+' IQD';
-  $('rep-debt').textContent=fmt(debt)+' IQD';
-  $('rep-debt-cnt').textContent=unp+' مشترك';
-  $('attn-cnt').textContent=`عرض الكل (${exp+ded+unp}) ›`;
+  _set('rep-inc',fmt(inc)+' IQD');
+  _set('rep-debt',fmt(debt)+' IQD');
+  _set('rep-debt-cnt',unp+' مشترك');
 }
 
 function renderHomeAttn(){
@@ -1520,7 +1474,6 @@ function closeOv(id){$(id).classList.remove('show')}
 
 async function initApp(){
   $('hdate').textContent=fmtToday();
-  $('greet-t').textContent=greet();
   await loadTheme();
   await loadAll();
   initBio();
